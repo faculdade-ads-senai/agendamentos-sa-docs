@@ -1,6 +1,33 @@
 # Arquitetura — Agendamentos SA
 
-Estruturas de pastas definidas pelo grupo, migradas dos arquivos de texto do Google Drive (pasta "Desenvolvimento Web - SA"). O código nos repositórios é a referência quando houver diferença.
+## Visão geral
+
+```mermaid
+flowchart LR
+    web["Painel web<br>React + Vite<br>(administrador)"] -->|HTTPS + JSON| api
+    app["App Android<br>React + Capacitor<br>(paciente)"] -->|HTTPS + JSON| api
+    api["API REST<br>Spring Boot 4 / Java 21"] -->|JDBC + Flyway| db[("PostgreSQL<br>produção: Neon")]
+    envio["Envio de notificações<br>processo agendado"] -->|lê PENDENTE,<br>marca ENVIADA ou FALHA| db
+    api -. grava notificação<br>na mesma transação .-> db
+```
+
+| Parte | Tecnologia | Repositório | Situação em 15/11/2026 |
+|---|---|---|---|
+| API | Spring Boot 4.1, Java 21, Spring Data JPA, Flyway, Spring Security | `yuriOdsz/agendamentos-sa` | CRUD de usuários pronto; agenda, bloqueios e horários disponíveis no PR #2 |
+| Painel web | React 19, Vite, Tailwind CSS (JavaScript) | `VictorKLing/frontend-agendamento` | Login e usuários integrados |
+| App do paciente | React, Vite, Capacitor (Android) | a criar | Não iniciado |
+| Banco | PostgreSQL 16+ | migrações no backend (`src/main/resources/db/migration`) | V1 e V2 prontas; produção no Neon (ver [ambientes](../banco-de-dados/AMBIENTES.md)) |
+| Documentação | Markdown e OpenAPI | `agendamentos-sa-docs` (este) | Versão 1.1 |
+
+Princípios:
+
+- Os dois clientes falam só com a API; nenhum acessa o banco direto.
+- O banco é definido pelas migrações Flyway. O Hibernate só confere se as entidades batem com ele (`ddl-auto=validate`).
+- Conflito de horário é barrado no próprio banco (restrição de exclusão), não só na aplicação. Assim dois pedidos simultâneos não reservam o mesmo horário.
+- As notificações são gravadas junto com o agendamento e enviadas depois por um processo separado (caixa de saída transacional). É o conceito de sistemas distribuídos da SA; detalhes em [Notificações assíncronas](../banco-de-dados/MODELO_DADOS.md#notificações-assíncronas-conceito-de-sistemas-distribuídos).
+- O contrato da API está em [api/openapi.yaml](../api/openapi.yaml).
+
+As estruturas de pastas abaixo foram definidas pelo grupo e migradas dos arquivos de texto do Google Drive (pasta "Desenvolvimento Web - SA"). O código nos repositórios é a referência quando houver diferença.
 
 ## Estruturas planejadas
 
