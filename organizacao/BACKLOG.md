@@ -2,7 +2,7 @@
 
 Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as listas de verificação deste arquivo; quando os dois divergirem, atualize os dois no mesmo dia.
 
-- Situação conferida em 15/11/2026 nos repositórios ([backend](https://github.com/yuriOdsz/agendamentos-sa), [painel web](https://github.com/VictorKLing/frontend-agendamento)) e no PR #2. O quadro do Trello em si não foi conferido nessa data; a coluna “Lista” diz onde cada cartão deve ficar.
+- Situação conferida em 15/11/2026 nos repositórios ([backend](https://github.com/faculdade-ads-senai/agendamentos-sa-backend), [painel web](https://github.com/VictorKLing/frontend-agendamento)) e no PR #2. O quadro do Trello em si não foi conferido nessa data; a coluna “Lista” diz onde cada cartão deve ficar.
 - Prazos são **proposta** até o grupo aprovar.
 - Entrega da SA (Desenvolvimento de Sistemas Web, AVA): vence em **08/12/2026 às 00:00**. Enviar até **07/12 às 23:59**. Só há **1 tentativa** de envio.
 - Clientes: painel web do administrador (React + Vite) e app do paciente (React + Capacitor, Android), com o mesmo backend Spring Boot e o mesmo contrato.
@@ -55,7 +55,7 @@ O enunciado divide o sistema em 6 módulos. O professor descartou a ideia de uma
 | Módulo | Backend | Cartões |
 |---|---|---|
 | 1 — Cadastro e autenticação | Yuri | [BE-02](#be-02), [FE-02](#fe-02) |
-| 2 — Agenda de profissionais | Pierre (agenda); Yuri (cadastro de médicos) | [BE-03](#be-03), [BE-04](#be-04) |
+| 2 — Agenda de profissionais | Pierre (agenda e cadastro de médicos; o Yuri passou o BE-03 em 16/11) | [BE-03](#be-03), [BE-04](#be-04) |
 | 3 — Agendamento de consultas | Yuri | [BE-05](#be-05), [DEC-03](#dec-03) |
 | 4 — Histórico e consultas do paciente | Pierre | [BE-09](#be-09) |
 | 5 — Notificações | Yuri | [BE-06](#be-06), [DIST-01](#dist-01) |
@@ -91,13 +91,13 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 | [QA-01](#qa-01) | Executar o roteiro de aceite da versão 1 | Backlog | Todos | 05/12 |
 | [DOC-01](#doc-01) | Atualizar a documentação final | Backlog | Luís (apoio: todos) | 06/12 |
 | [APR-01](#apr-01) | Preparar a apresentação e as respostas técnicas individuais | Backlog | Todos (coordenação: Luís) | 07/12 |
-| [BE-03](#be-03) | Implementar o cadastro de médicos | Pronto para iniciar | Yuri (ele se atribuiu no Trello em 27/10; divisão a confirmar no DEC-02) | 25/11 |
+| [BE-03](#be-03) | Implementar o cadastro de médicos | Pronto para iniciar | Pierre (o Yuri passou o cartão para ele no Trello em 16/11) | 25/11 |
 | [DOC-02](#doc-02) | Migrar a documentação do Drive para o repositório agendamentos-sa-docs | Em andamento | Luís | 16/11 |
 | [DB-02](#db-02) | Validar as migrações V1 a V3 no PostgreSQL | Em andamento | Luís (apoio: Yuri ou Pierre) | 20/11 |
 | [DB-04](#db-04) | Criar o banco de produção na nuvem | Em andamento | Luís | 19/11 |
 | [BE-01](#be-01) | Completar a base do backend e o ambiente local | Em andamento | Yuri e Pierre | 20/11 |
 | [BE-02](#be-02) | Implementar autenticação, cadastro e perfil do usuário | Em andamento | Yuri | 22/11 |
-| [BE-04](#be-04) | Concluir agenda e bloqueios (PR #2) | Em andamento | Pierre | 19/11 |
+| [BE-04](#be-04) | Concluir agenda e bloqueios (branch feature/api-agendas) | Em andamento | Pierre | 19/11 |
 | [FE-01W](#fe-01w) | Estruturar a base do painel web administrativo | Em andamento | Victor | 20/11 |
 | [FE-02](#fe-02) | Implementar autenticação no painel e no app | Em andamento | Victor | 25/11 |
 | [INT-01](#int-01) | Integrar painel e app com o backend pelo contrato v1 | Em andamento | Victor, Yuri e Pierre (coordenação: Luís) | 04/12 |
@@ -367,9 +367,9 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** O app no celular e o painel publicado acessam a API pela internet, ligada ao banco de produção.
 
-**Contexto.** O Luís assumiu a publicação em 16/11. O banco de produção fica no Neon (DB-04). Sem o backend publicado, o app só funciona na mesma rede do computador que roda a API. O RNF-001 exige HTTPS no ambiente publicado. Não precisa mexer no Java: o application.yaml já lê banco, porta, JWT_SECRET e CORS de variáveis de ambiente. Proposta: Render, cujo plano gratuito roda Docker e dá HTTPS; o serviço dorme após 15 minutos sem acesso e leva cerca de 1 minuto para acordar. O repositório do backend é privado e do Yuri, e só o dono consegue liberar o Render nele.
+**Contexto.** O Luís assumiu a publicação em 16/11. O banco de produção fica no Neon (DB-04). Sem o backend publicado, o app só funciona na mesma rede do computador que roda a API. O RNF-001 exige HTTPS no ambiente publicado. Não precisa mexer no Java: o application.yaml já lê banco, porta, JWT_SECRET e CORS de variáveis de ambiente. Proposta: Render, cujo plano gratuito roda Docker e dá HTTPS; o serviço dorme após 15 minutos sem acesso e leva cerca de 1 minuto para acordar. Desde 16/11 o repositório do backend está na organização faculdade-ads-senai, onde o Luís é dono: ele mesmo libera o Render.
 
-**Escopo.** Inclui: Dockerfile do backend (PR no repositório agendamentos-sa); variáveis de produção no Render; HTTPS e CORS. Não inclui: mudanças no código Java; publicação do painel web (pode ir junto, se o grupo quiser).
+**Escopo.** Inclui: Dockerfile do backend (PR no repositório agendamentos-sa-backend); variáveis de produção no Render; HTTPS e CORS. Não inclui: mudanças no código Java; publicação do painel web (pode ir junto, se o grupo quiser).
 
 **Requisitos atendidos:** RNF-001, RNF-009  
 **Dependências:** BE-01, DB-04
@@ -377,7 +377,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 **Tarefas**
 
 - [ ] Avisar o grupo que o Luís publica a API e confirmar o Render (DEC-02)
-- [ ] Pedir ao Yuri para liberar o app do Render no repositório agendamentos-sa (só o dono consegue)
+- [x] Ter acesso de dono ao repositório para liberar o Render (organização faculdade-ads-senai, 16/11)
 - [ ] Criar o Dockerfile do backend: build com o mvnw sem rodar os testes, imagem final só com o Java 21
 - [ ] Abrir o PR do Dockerfile e explicar ao grupo
 - [ ] Criar o serviço no Render a partir do master, sem ativar o perfil dev
@@ -664,7 +664,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 #### BE-03 — Implementar o cadastro de médicos
 
-**Lista:** Pronto para iniciar · **Responsável:** Yuri (ele se atribuiu no Trello em 27/10; divisão a confirmar no DEC-02) · **Etiquetas:** Backend · **Prazo (proposta):** 25/11
+**Lista:** Pronto para iniciar · **Responsável:** Pierre (o Yuri passou o cartão para ele no Trello em 16/11) · **Etiquetas:** Backend · **Prazo (proposta):** 25/11
 
 **Módulo do enunciado:** 2 — Agenda de profissionais
 
@@ -695,7 +695,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Médico desativado continua no histórico e some da escolha do paciente
 - [ ] Paciente lista, mas não altera
 
-**Links:** [api/openapi.yaml](../api/openapi.yaml) · [PR #2](https://github.com/yuriOdsz/agendamentos-sa/pull/2)
+**Links:** [api/openapi.yaml](../api/openapi.yaml) · [branch feature/api-agendas](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/tree/feature/api-agendas)
 
 ### Em andamento
 
@@ -731,7 +731,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Os quatro integrantes abrem e editam o repositório
 - [ ] Cartões do Trello apontam para o repositório, não para o Drive
 
-**Links:** [README.md](../README.md) · [frontend-agendamento](https://github.com/VictorKLing/frontend-agendamento) · [agendamentos-sa (backend)](https://github.com/yuriOdsz/agendamentos-sa)
+**Links:** [README.md](../README.md) · [frontend-agendamento](https://github.com/VictorKLing/frontend-agendamento) · [agendamentos-sa (backend)](https://github.com/faculdade-ads-senai/agendamentos-sa-backend)
 
 <a id="db-02"></a>
 
@@ -837,7 +837,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Flyway aplica V1 a V3 num banco vazio
 - [ ] O painel rodando local não é barrado por CORS
 
-**Links:** [backend](https://github.com/yuriOdsz/agendamentos-sa) · [banco-de-dados/AMBIENTES.md](../banco-de-dados/AMBIENTES.md) · [arquitetura/ARQUITETURA.md](../arquitetura/ARQUITETURA.md)
+**Links:** [backend](https://github.com/faculdade-ads-senai/agendamentos-sa-backend) · [banco-de-dados/AMBIENTES.md](../banco-de-dados/AMBIENTES.md) · [arquitetura/ARQUITETURA.md](../arquitetura/ARQUITETURA.md)
 
 <a id="be-02"></a>
 
@@ -877,11 +877,11 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Usuário desativado não consegue logar
 - [ ] Paciente só lê e altera os próprios dados
 
-**Links:** [api/openapi.yaml](../api/openapi.yaml) · [API-USUARIOS.md](https://github.com/yuriOdsz/agendamentos-sa/blob/master/API-USUARIOS.md) · [AUTENTICACAO.md](https://github.com/yuriOdsz/agendamentos-sa/blob/master/AUTENTICACAO.md)
+**Links:** [api/openapi.yaml](../api/openapi.yaml) · [API-USUARIOS.md](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/blob/master/API-USUARIOS.md) · [AUTENTICACAO.md](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/blob/master/AUTENTICACAO.md)
 
 <a id="be-04"></a>
 
-#### BE-04 — Concluir agenda e bloqueios (PR #2)
+#### BE-04 — Concluir agenda e bloqueios (branch feature/api-agendas)
 
 **Lista:** Em andamento · **Responsável:** Pierre · **Etiquetas:** Backend · **Prazo (proposta):** 19/11
 
@@ -889,7 +889,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** Administrador define a agenda semanal e os bloqueios; qualquer usuário consulta os horários livres.
 
-**Contexto.** O PR #2 (aberto em 02/11, com GET e PUT /medicos/{id}/agenda, GET, POST e DELETE de bloqueios e GET horarios-disponiveis, usando lock no médico) foi fechado sem merge pelo Yuri em 15/11: antes de aceitar um PR, o autor apresenta e explica a implementação ao grupo. O código continua na branch feature/api-agendas, que precisa receber o master com JWT e V3. A revisão de banco não achou problema de mapeamento; há três ajustes pequenos.
+**Contexto.** O PR #2 (aberto em 02/11, com GET e PUT /medicos/{id}/agenda, GET, POST e DELETE de bloqueios e GET horarios-disponiveis, usando lock no médico) foi fechado sem merge pelo Yuri em 15/11: antes de aceitar um PR, o autor apresenta e explica a implementação ao grupo. O código continua na branch feature/api-agendas, que precisa receber o master com JWT e V3. A revisão de banco não achou problema de mapeamento; há três ajustes pequenos. Em 16/11 o repositório do backend foi recriado na organização faculdade-ads-senai: as páginas dos PRs se perderam, mas a branch feature/api-agendas foi preservada.
 
 **Escopo.** Inclui: rotas de agenda, bloqueios e horários disponíveis; geração de horários pela duração da janela; exclusão de horários ocupados e bloqueados. Não inclui: criação de agendamentos (BE-05).
 
@@ -902,7 +902,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [x] Rotas de agenda, bloqueios e horários disponíveis
 - [ ] Atualizar a branch feature/api-agendas com o master (JWT e V3)
 - [ ] Apresentar e explicar a implementação ao grupo (regra para aceitar PR)
-- [ ] Reabrir o PR #2 ou abrir um novo
+- [ ] Abrir um PR novo da branch feature/api-agendas no repositório agendamentos-sa-backend
 - [ ] Tirar o comentário //sale do Application.java
 - [ ] Padronizar o pacote das entidades (usuarios usa model; agendas e medicos usam entity)
 - [ ] Testar as rotas no Postman ou Insomnia com os dados de demonstração (DB-03)
@@ -915,7 +915,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Horário bloqueado ou ocupado não aparece em horarios-disponiveis
 - [ ] horarios-disponiveis responde em até 3 segundos com os dados de demonstração
 
-**Links:** [PR #2](https://github.com/yuriOdsz/agendamentos-sa/pull/2) · [PR #1](https://github.com/yuriOdsz/agendamentos-sa/pull/1) · [api/openapi.yaml](../api/openapi.yaml)
+**Links:** [branch feature/api-agendas](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/tree/feature/api-agendas) · [api/openapi.yaml](../api/openapi.yaml)
 
 <a id="fe-01w"></a>
 
@@ -1156,7 +1156,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] O backend sobe com ddl-auto=validate sem divergência de colunas
 - [ ] Depois do congelamento, mudança só por nova migração (V3, V4...) revisada
 
-**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [migrações no backend](https://github.com/yuriOdsz/agendamentos-sa/tree/master/src/main/resources/db/migration)
+**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [migrações no backend](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/tree/master/src/main/resources/db/migration)
 
 <a id="api-01"></a>
 
@@ -1260,4 +1260,4 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [x] Rodar duas vezes não duplica nada
 - [x] Sem o perfil dev, nenhum dado de demonstração é criado
 
-**Links:** [banco-de-dados/AMBIENTES.md](../banco-de-dados/AMBIENTES.md) · [PR #3](https://github.com/yuriOdsz/agendamentos-sa/pull/3) · [PR #4](https://github.com/yuriOdsz/agendamentos-sa/pull/4)
+**Links:** [banco-de-dados/AMBIENTES.md](../banco-de-dados/AMBIENTES.md) · [dados de demonstração](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/tree/master/src/main/resources/db/dev) · [scripts/demo-local.ps1](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/blob/master/scripts/demo-local.ps1)
