@@ -82,7 +82,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 | [BE-06](#be-06) | Implementar notificações | Backlog | Yuri (módulo 5; divisão a confirmar no DEC-02) | 02/12 |
 | [DIST-01](#dist-01) | Aplicar o conceito distribuído: notificações assíncronas | Backlog | Yuri, junto com as notificações (Luís documenta) | 02/12 |
 | [BE-07](#be-07) | Testar concorrência e regras críticas | Backlog | Yuri e Pierre (revisor: Luís) | 03/12 |
-| [BE-08](#be-08) | Publicar o backend com HTTPS | Backlog | A definir | 29/11 |
+| [BE-08](#be-08) | Publicar o backend com HTTPS | Backlog | Luís | 29/11 |
 | [FE-01M](#fe-01m) | Criar a base do app React + Capacitor | Backlog | Victor | 22/11 |
 | [FE-03](#fe-03) | Implementar a área do paciente no app | Backlog | Victor | 02/12 |
 | [FE-04](#fe-04) | Implementar a área administrativa no painel web | Backlog | Victor | 02/12 |
@@ -363,30 +363,32 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 #### BE-08 — Publicar o backend com HTTPS
 
-**Lista:** Backlog · **Responsável:** A definir · **Etiquetas:** Backend, Integração · **Prazo (proposta):** 29/11
+**Lista:** Backlog · **Responsável:** Luís · **Etiquetas:** Backend, Integração · **Prazo (proposta):** 29/11
 
 **Objetivo.** O app no celular e o painel publicado acessam a API pela internet, ligada ao banco de produção.
 
-**Contexto.** O banco de produção fica no Neon (DB-04). Sem o backend publicado, o app só funciona na mesma rede do computador que roda a API. O RNF-001 exige HTTPS no ambiente publicado. Onde publicar ainda não foi decidido.
+**Contexto.** O Luís assumiu a publicação em 16/11. O banco de produção fica no Neon (DB-04). Sem o backend publicado, o app só funciona na mesma rede do computador que roda a API. O RNF-001 exige HTTPS no ambiente publicado. Não precisa mexer no Java: o application.yaml já lê banco, porta, JWT_SECRET e CORS de variáveis de ambiente. Proposta: Render, cujo plano gratuito roda Docker e dá HTTPS; o serviço dorme após 15 minutos sem acesso e leva cerca de 1 minuto para acordar. O repositório do backend é privado e do Yuri, e só o dono consegue liberar o Render nele.
 
-**Escopo.** Inclui: Dockerfile do backend; variáveis de produção no provedor; HTTPS e CORS. Não inclui: publicação do painel web (pode ir junto, se o grupo quiser).
+**Escopo.** Inclui: Dockerfile do backend (PR no repositório agendamentos-sa); variáveis de produção no Render; HTTPS e CORS. Não inclui: mudanças no código Java; publicação do painel web (pode ir junto, se o grupo quiser).
 
 **Requisitos atendidos:** RNF-001, RNF-009  
 **Dependências:** BE-01, DB-04
 
 **Tarefas**
 
-- [ ] Decidir com o grupo se a API será publicada e quem publica (DEC-02); o enunciado fala em backend hospedado em nuvem
-- [ ] Decidir onde publicar: serviço que rode Java/Docker, como Render, Railway ou uma EC2 (a Vercel serve para o painel, não para a API)
-- [ ] Criar o Dockerfile do backend
-- [ ] Configurar DB_* e JWT_SECRET no provedor, fora do Git (o valor padrão do application.yaml não serve para produção)
-- [ ] Ativar HTTPS e liberar no CORS o painel e o app
-- [ ] Confirmar que o perfil dev não está ativo em produção
+- [ ] Avisar o grupo que o Luís publica a API e confirmar o Render (DEC-02)
+- [ ] Pedir ao Yuri para liberar o app do Render no repositório agendamentos-sa (só o dono consegue)
+- [ ] Criar o Dockerfile do backend: build com o mvnw sem rodar os testes, imagem final só com o Java 21
+- [ ] Abrir o PR do Dockerfile e explicar ao grupo
+- [ ] Criar o serviço no Render a partir do master, sem ativar o perfil dev
+- [ ] Configurar no Render, fora do Git: SPRING_DATASOURCE_URL com o endereço direto do Neon (sem -pooler) e sslmode=require, DB_USERNAME, DB_PASSWORD e um JWT_SECRET novo
+- [ ] Liberar em CORS_ALLOWED_ORIGINS o painel publicado e o app (https://localhost)
 - [ ] Registrar a URL publicada em banco-de-dados/AMBIENTES.md
+- [ ] No dia da apresentação, abrir a URL alguns minutos antes para o serviço acordar
 
 **Critérios de aceite**
 
-- [ ] GET de uma rota pública responde por HTTPS
+- [ ] O login (POST /api/v1/auth/login) responde por HTTPS
 - [ ] O app instalado no celular faz login pela internet
 
 **Links:** [banco-de-dados/AMBIENTES.md](../banco-de-dados/AMBIENTES.md)
@@ -1027,7 +1029,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** Fechar as decisões técnicas que ainda são proposta, para backend e clientes pararem de depender delas.
 
-**Contexto.** Três itens já estão decididos (PostgreSQL, clínica única, especialidade como atributo). Duração da consulta, canal de notificação e lembrete têm proposta na modelagem. Sem eles, BE-04, BE-05 e BE-06 não fecham regra. Ficam em aberto, sem proposta: os perfis Médico e Recepcionista, a divisão do backend por módulo e a publicação da API. O enunciado não define perfis; o documento de requisitos do grupo cita só Paciente e Administrador, e a V2 do Yuri criou MEDICO e RECEPCIONISTA.
+**Contexto.** Três itens já estão decididos (PostgreSQL, clínica única, especialidade como atributo). Duração da consulta, canal de notificação e lembrete têm proposta na modelagem. Sem eles, BE-04, BE-05 e BE-06 não fecham regra. Ficam em aberto, sem proposta: os perfis Médico e Recepcionista e a divisão do backend por módulo. A publicação da API tem proposta: Render, com o Luís (BE-08). O enunciado não define perfis; o documento de requisitos do grupo cita só Paciente e Administrador, e a V2 do Yuri criou MEDICO e RECEPCIONISTA.
 
 **Escopo.** Inclui: duração da consulta; canal e momento das notificações; perfis Médico e Recepcionista (criados pela V2); divisão do backend por módulo; publicação da API (BE-08). Não inclui: regras de cancelamento e reagendamento (DEC-03).
 
@@ -1046,7 +1048,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Se o médico entrar: V4 com medico.usuario_id (Luís), rotas de minha agenda e de concluir consulta (backend) e telas (Victor)
 - [ ] Se o recepcionista entrar: permissões para cadastrar paciente e agendar ou cancelar por ele (backend) e telas (Victor); o banco já guarda quem agendou (criado_por_id)
 - [ ] Confirmar a divisão do backend: ímpares com o Yuri (1, 3, 5) e pares com o Pierre (2, 4); o Yuri se atribuiu ao cadastro de médicos (módulo 2) em 27/10
-- [ ] Decidir se a API será publicada na nuvem e quem publica (BE-08)
+- [ ] Aprovar a publicação da API no Render, com o Luís (BE-08; proposta)
 - [ ] Registrar o resultado na seção “Decisões da versão 1” do MODELO_DADOS.md
 
 **Critérios de aceite**
