@@ -105,9 +105,9 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 | [DEC-03](#dec-03) | Definir as regras de cancelamento e reagendamento | Em revisão | Todos (Luís registra) | 18/11 |
 | [REQ-01](#req-01) | Confirmar os ajustes do documento de requisitos | Em revisão | Luís | 18/11 |
 | [DB-01](#db-01) | Revisar e aprovar o modelo de dados | Em revisão | Luís (revisores: Yuri e Pierre) | 18/11 |
-| [DB-03](#db-03) | Carregar dados de demonstração no perfil dev | Em revisão | Luís | 20/11 |
 | [API-01](#api-01) | Revisar e congelar o contrato OpenAPI v1 | Em revisão | Luís (revisores: Yuri, Pierre e Victor) | 20/11 |
 | [DEC-01](#dec-01) | Definir os clientes: painel web + app React + Capacitor | Concluído | Luís | 15/11 |
+| [DB-03](#db-03) | Carregar dados de demonstração no perfil dev | Concluído | Luís | 20/11 |
 
 ## Rastreabilidade: requisito → cartões
 
@@ -308,7 +308,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 **Tarefas**
 
 - [ ] Confirmar o dono junto com a divisão do backend (DEC-02)
-- [ ] Processo separado (@Scheduled ou consumidor) que lê PENDENTE com FOR UPDATE SKIP LOCKED
+- [ ] Processo separado (tarefa agendada do Spring, ou consumidor) que lê PENDENTE com FOR UPDATE SKIP LOCKED
 - [ ] Marcar ENVIADA com enviada_em, ou FALHA somando tentativas
 - [ ] Limite de tentativas e reenvio das que falharam
 - [ ] Simular canal fora do ar e mostrar que o agendamento continua confirmado
@@ -1158,40 +1158,6 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [migrações no backend](https://github.com/yuriOdsz/agendamentos-sa/tree/master/src/main/resources/db/migration)
 
-<a id="db-03"></a>
-
-#### DB-03 — Carregar dados de demonstração no perfil dev
-
-**Lista:** Em revisão · **Responsável:** Luís · **Etiquetas:** Banco de dados · **Prazo (proposta):** 20/11
-
-**Objetivo.** Qualquer integrante sobe o backend local já com usuários, médicos, agendas e consultas para testar.
-
-**Contexto.** O script repetível R__dados_demonstracao.sql só roda com SPRING_PROFILES_ACTIVE=dev (application-dev.yaml inclui classpath:db/dev). Está na branch local feature/banco-dados-demonstracao, ainda não publicada; em 16/11 a branch foi atualizada para o master com JWT e o administrador de demonstração passou a usar o perfil ADMIN (V3), o que permite entrar no painel com ele. Pela regra do grupo, o Luís apresenta o PR antes do aceite.
-
-**Escopo.** Inclui: 1 administrador (ADMIN) e 2 pacientes (senha Demo@1234); 3 médicos fictícios (CRM DEMO-1001 a 1003/SC); 11 janelas de agenda e 1 bloqueio; 4 consultas: 2 futuras, 1 concluída, 1 cancelada; notificações de confirmação, lembrete e cancelamento. Não inclui: dados reais; banco de produção.
-
-**Requisitos atendidos:** RNF-015, RNF-018  
-**Dependências:** DB-02
-
-**Tarefas**
-
-- [x] Escrever R__dados_demonstracao.sql com ON CONFLICT e NOT EXISTS (repetível)
-- [x] Criar application-dev.yaml com a pasta db/dev no Flyway
-- [x] Atualizar a branch para o master com JWT e usar o perfil ADMIN (V3)
-- [ ] Rodar com o perfil dev num banco vazio
-- [ ] Rodar de novo e confirmar que nada duplica
-- [ ] Subir sem o perfil dev e confirmar que nada é inserido
-- [ ] Publicar a branch e abrir PR no backend
-- [ ] Listar os usuários de demonstração no README do backend
-
-**Critérios de aceite**
-
-- [ ] Com o perfil dev, os dados aparecem nas rotas de usuários e agenda
-- [ ] Rodar duas vezes não duplica nada
-- [ ] Sem o perfil dev, nenhum dado de demonstração é criado
-
-**Links:** [banco-de-dados/AMBIENTES.md](../banco-de-dados/AMBIENTES.md)
-
 <a id="api-01"></a>
 
 #### API-01 — Revisar e congelar o contrato OpenAPI v1
@@ -1260,3 +1226,38 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [x] Cartões de frontend refletem os dois clientes
 
 **Links:** [requisitos/REQUISITOS.md](../requisitos/REQUISITOS.md) · [arquitetura/ARQUITETURA.md](../arquitetura/ARQUITETURA.md)
+
+<a id="db-03"></a>
+
+#### DB-03 — Carregar dados de demonstração no perfil dev
+
+**Lista:** Concluído · **Responsável:** Luís · **Etiquetas:** Banco de dados · **Prazo (proposta):** 20/11
+
+**Objetivo.** Qualquer integrante sobe o backend local já com usuários, médicos, agendas e consultas para testar.
+
+**Contexto.** Concluído em 16/11, com merge do Luís. PR #3: o script repetível R__dados_demonstracao.sql, que só roda com SPRING_PROFILES_ACTIVE=dev. O perfil dev usa um banco separado, o agenda_sa_demo, porque o teste mostrou que um banco que recebeu a demonstração não sobe mais sem o perfil dev (o Flyway acusa a migração ausente). PR #4: scripts/demo-local.ps1 sobe no Windows, em um comando, um PostgreSQL portátil na porta 5433, o backend com o perfil dev e o painel. Testado num PostgreSQL 18.7. As rotas de agenda ainda não existem na master; o teste delas com estes dados fica no BE-04.
+
+**Escopo.** Inclui: 1 administrador (ADMIN) e 2 pacientes (senha Demo@1234); 3 médicos fictícios (CRM DEMO-1001 a 1003/SC); 11 janelas de agenda e 1 bloqueio; 4 consultas: 2 futuras, 1 concluída, 1 cancelada; notificações de confirmação, lembrete e cancelamento; banco separado agenda_sa_demo no perfil dev; scripts/demo-local.ps1 (Windows, um comando). Não inclui: dados reais; banco de produção.
+
+**Requisitos atendidos:** RNF-015, RNF-018  
+**Dependências:** DB-02
+
+**Tarefas**
+
+- [x] Escrever R__dados_demonstracao.sql com ON CONFLICT e NOT EXISTS (repetível)
+- [x] Criar application-dev.yaml com a pasta db/dev no Flyway e o banco separado agenda_sa_demo
+- [x] Atualizar a branch para o master com JWT e usar o perfil ADMIN (V3)
+- [x] Rodar com o perfil dev num banco vazio (16/11, PostgreSQL 18.7)
+- [x] Rodar de novo e confirmar que nada duplica
+- [x] Subir sem o perfil dev e confirmar que nada é inserido
+- [x] Publicar a branch e abrir PR no backend (PR #3, merge em 16/11)
+- [x] Script de demonstração em um comando no Windows (PR #4, merge em 16/11)
+- [x] Listar os usuários de demonstração: AMBIENTES.md, PR #3 e cabeçalho do script (o backend não tem README)
+
+**Critérios de aceite**
+
+- [x] Com o perfil dev, os usuários de demonstração entram e aparecem na rota de usuários e no painel
+- [x] Rodar duas vezes não duplica nada
+- [x] Sem o perfil dev, nenhum dado de demonstração é criado
+
+**Links:** [banco-de-dados/AMBIENTES.md](../banco-de-dados/AMBIENTES.md) · [PR #3](https://github.com/yuriOdsz/agendamentos-sa/pull/3) · [PR #4](https://github.com/yuriOdsz/agendamentos-sa/pull/4)
