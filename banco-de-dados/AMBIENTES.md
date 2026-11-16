@@ -26,7 +26,7 @@ Nos dois ambientes a estrutura vem das mesmas migrações Flyway do backend. Nin
    ```
 
 3. Rode o backend. Na primeira subida o Flyway aplica V1, V2 e V3.
-4. Para ter dados de demonstração, rode com `SPRING_PROFILES_ACTIVE=dev`. Usuários: `admin.demo@example.com`, `ana.demo@example.com` e `bruno.demo@example.com`, senha `Demo@1234`. Depende do PR dos dados de demonstração estar na `master`.
+4. Para ter dados de demonstração, crie uma vez o banco `agenda_sa_demo` (`CREATE DATABASE agenda_sa_demo;`) e rode com `SPRING_PROFILES_ACTIVE=dev`. O perfil `dev` usa esse banco separado, e o `agenda_sa` fica sem dados de mentira. Usuários: `admin.demo@example.com`, `ana.demo@example.com` e `bruno.demo@example.com`, senha `Demo@1234`. Para atualizar as datas das consultas, apague e recrie o `agenda_sa_demo`. Depende do [PR #3](https://github.com/yuriOdsz/agendamentos-sa/pull/3) estar na `master`.
 5. Para conferir as restrições do banco, rode [validacao_restricoes.sql](validacao_restricoes.sql) no DBeaver, pgAdmin ou psql. Ele desfaz tudo no fim.
 
 Para recomeçar do zero: apague e recrie o banco `agenda_sa` e suba o backend de novo.
