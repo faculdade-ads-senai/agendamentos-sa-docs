@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Agenda SA API
-  version: 1.1.0
+  version: 1.2.0
   description: |
     Contrato REST do sistema de agendamento de consultas. Os clientes são o painel web
     (administração) e o aplicativo React + Capacitor (paciente), que consomem a mesma API.
@@ -10,17 +10,25 @@ info:
 
     Cada operação traz `x-status`:
     - `implementado`: existe no código; `x-origem` indica onde (`master` ou `PR #2`,
-      branch `feature/api-agendas`).
+      branch `feature/api-agendas`). O PR #2 foi fechado sem merge em 15/11/2026 até o
+      autor apresentar a implementação ao grupo; o código continua na branch.
     - `planejado`: faz parte do contrato, mas ainda não foi implementado.
 
-    Estado atual da segurança: o backend ainda usa a configuração padrão do Spring Security
-    (usuário de desenvolvimento e token CSRF nas escritas). O esquema `bearerAuth` (JWT)
-    descrito aqui é o planejado para `/auth/login`. As restrições por perfil citadas nas
-    operações valem quando a autenticação definitiva existir.
+    Segurança (master desde 15/11/2026): API sem estado, com JWT HS256 de 1 hora no cabeçalho
+    `Authorization: Bearer`. `POST /auth/login` é público; `/usuarios` e `/usuarios/{usuarioId}`
+    exigem `ADMIN`; as demais rotas exigem apenas um usuário autenticado. As restrições por
+    perfil citadas nas outras operações são o planejado e ainda não estão no código.
 
-    Perfis: na versão 1 só `ADMINISTRADOR` e `PACIENTE` têm uso. `MEDICO` e `RECEPCIONISTA`
+    Perfis: na versão 1 só `ADMIN` e `PACIENTE` têm uso. `MEDICO` e `RECEPCIONISTA`
     existem no banco (migração V2), mas ficam reservados: não têm permissões próprias e não
     têm vínculo com a tabela `medico`.
+
+    Mudanças da 1.2.0 (16/11/2026), para acompanhar o master do backend:
+    - perfil `ADMINISTRADOR` volta a ser `ADMIN` (migração V3 do backend);
+    - `POST /auth/login` implementado; novo `GET /auth/me`, implementado, que devolve o
+      usuário do token (o `GET /usuarios/me` do contrato continua planejado);
+    - todo o CRUD `/usuarios`, inclusive o `POST`, exige `ADMIN`; o paciente se cadastra
+      por `/auth/cadastro` (planejado).
 
     Mudanças da 1.1.0 (15/11/2026):
     - clientes: painel web e aplicativo React + Capacitor (decisão do grupo, 15/11/2026);
@@ -76,8 +84,12 @@ paths:
     post:
       tags: [Autenticação]
       summary: Autenticar usuário
+      description: |
+        Devolve um JWT válido por 1 hora (`expiresIn` em segundos) e o usuário. E-mail
+        inexistente, senha errada ou usuário inativo devolvem o mesmo 401. Resposta sem cache.
       operationId: autenticar
-      x-status: planejado
+      x-status: implementado
+      x-origem: master
       security: []
       requestBody:
         required: true
@@ -94,6 +106,26 @@ paths:
                 $ref: '#/components/schemas/TokenResponse'
         '400':
           $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+
+  /auth/me:
+    get:
+      tags: [Autenticação]
+      summary: Consultar o usuário do token
+      description: |
+        Devolve o usuário autenticado, lido do banco a cada requisição; usuário desativado
+        recebe 401. Usado pelo painel para restaurar a sessão.
+      operationId: consultarUsuarioAutenticado
+      x-status: implementado
+      x-origem: master
+      responses:
+        '200':
+          description: Usuário autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
         '401':
           $ref: '#/components/responses/NaoAutorizado'
 
@@ -168,8 +200,8 @@ paths:
       tags: [Usuários]
       summary: Criar usuário
       description: |
-        Cria um usuário ativo com qualquer perfil. Restrito a `ADMINISTRADOR` quando a
-        autenticação existir; o autocadastro de paciente é `/auth/cadastro`.
+        Cria um usuário ativo com qualquer perfil. Restrito a `ADMIN`; o autocadastro de
+        paciente é `/auth/cadastro`.
         Nome e e-mail têm espaços das extremidades removidos; o e-mail é salvo em minúsculas e
         é único sem diferenciar maiúsculas, inclusive entre inativos. A senha é guardada com BCrypt.
       operationId: criarUsuario
@@ -210,8 +242,8 @@ paths:
       tags: [Usuários]
       summary: Listar usuários
       description: |
-        Lista paginada de todos os perfis, inclusive inativos. Restrito a `ADMINISTRADOR`
-        quando a autenticação existir. Atende ao RF-008 (consulta de pacientes pelo
+        Lista paginada de todos os perfis, inclusive inativos. Restrito a `ADMIN`.
+        Atende ao RF-008 (consulta de pacientes pelo
         administrador) e substitui a rota de listagem de pacientes da versão 1.0.0.
         Os filtros `perfil` e `busca` ainda não existem no código.
       operationId: listarUsuarios
@@ -260,7 +292,7 @@ paths:
     get:
       tags: [Usuários]
       summary: Consultar usuário
-      description: Restrito a `ADMINISTRADOR` quando a autenticação existir.
+      description: Restrito a `ADMIN`.
       operationId: consultarUsuario
       x-status: implementado
       x-origem: master
@@ -284,8 +316,7 @@ paths:
       summary: Atualizar usuário
       description: |
         Substitui nome, e-mail, perfil e situação. A senha é opcional: ausente ou `null`
-        mantém a atual. `ativo: true` reativa um usuário. Restrito a `ADMINISTRADOR` quando
-        a autenticação existir.
+        mantém a atual. `ativo: true` reativa um usuário. Restrito a `ADMIN`.
       operationId: atualizarUsuario
       x-status: implementado
       x-origem: master
@@ -317,7 +348,7 @@ paths:
       summary: Desativar usuário
       description: |
         Desativação lógica; preserva agendamentos e histórico. Retorna 204 também quando o
-        usuário já está inativo. Restrito a `ADMINISTRADOR` quando a autenticação existir.
+        usuário já está inativo. Restrito a `ADMIN`.
       operationId: desativarUsuario
       x-status: implementado
       x-origem: master
@@ -362,7 +393,7 @@ paths:
     post:
       tags: [Médicos]
       summary: Cadastrar médico
-      description: Requer perfil `ADMINISTRADOR`. CRM e UF juntos são únicos.
+      description: Requer perfil `ADMIN`. CRM e UF juntos são únicos.
       operationId: cadastrarMedico
       x-status: planejado
       requestBody:
@@ -405,7 +436,7 @@ paths:
     patch:
       tags: [Médicos]
       summary: Atualizar ou desativar médico
-      description: Requer perfil `ADMINISTRADOR`. A propriedade `ativo` faz a desativação lógica.
+      description: Requer perfil `ADMIN`. A propriedade `ativo` faz a desativação lógica.
       operationId: atualizarMedico
       x-status: planejado
       requestBody:
@@ -457,7 +488,7 @@ paths:
       tags: [Agendas]
       summary: Substituir agenda semanal do médico
       description: |
-        Requer perfil `ADMINISTRADOR`. A lista enviada passa a ser a agenda ativa completa;
+        Requer perfil `ADMIN`. A lista enviada passa a ser a agenda ativa completa;
         lista vazia desativa a agenda semanal. Janelas do mesmo dia não podem se sobrepor
         (adjacentes são aceitas) e cada janela precisa comportar ao menos uma consulta.
         Consultas já marcadas são mantidas.
@@ -500,7 +531,7 @@ paths:
     get:
       tags: [Agendas]
       summary: Listar bloqueios ativos do médico
-      description: Requer perfil `ADMINISTRADOR`. Ordenados pelo início.
+      description: Requer perfil `ADMIN`. Ordenados pelo início.
       operationId: listarBloqueiosAgenda
       x-status: implementado
       x-origem: PR #2
@@ -525,7 +556,7 @@ paths:
       tags: [Agendas]
       summary: Criar bloqueio de agenda
       description: |
-        Requer perfil `ADMINISTRADOR`. Não cancela consultas: se houver consulta `AGENDADA`
+        Requer perfil `ADMIN`. Não cancela consultas: se houver consulta `AGENDADA`
         no período, o bloqueio é recusado com 409.
       operationId: criarBloqueioAgenda
       x-status: implementado
@@ -574,7 +605,7 @@ paths:
       tags: [Agendas]
       summary: Desativar bloqueio de agenda
       description: |
-        Requer perfil `ADMINISTRADOR`. Exclusão lógica, para manter rastreabilidade;
+        Requer perfil `ADMIN`. Exclusão lógica, para manter rastreabilidade;
         repetir a chamada num bloqueio existente também retorna 204.
       operationId: desativarBloqueioAgenda
       x-status: implementado
@@ -665,7 +696,7 @@ paths:
     get:
       tags: [Agendamentos]
       summary: Listar agendamentos para administração
-      description: Requer perfil `ADMINISTRADOR`.
+      description: Requer perfil `ADMIN`.
       operationId: listarAgendamentos
       x-status: planejado
       parameters:
@@ -734,7 +765,7 @@ paths:
     get:
       tags: [Agendamentos]
       summary: Consultar agendamento
-      description: Paciente acessa apenas o próprio registro; `ADMINISTRADOR` acessa qualquer registro.
+      description: Paciente acessa apenas o próprio registro; `ADMIN` acessa qualquer registro.
       operationId: consultarAgendamento
       x-status: planejado
       responses:
@@ -940,9 +971,9 @@ components:
   schemas:
     Perfil:
       type: string
-      enum: [ADMINISTRADOR, PACIENTE, MEDICO, RECEPCIONISTA]
+      enum: [ADMIN, PACIENTE, MEDICO, RECEPCIONISTA]
       description: |
-        Na versão 1 só `ADMINISTRADOR` e `PACIENTE` têm uso. `MEDICO` e `RECEPCIONISTA`
+        Na versão 1 só `ADMIN` e `PACIENTE` têm uso. `MEDICO` e `RECEPCIONISTA`
         ficam reservados: sem permissões próprias e sem vínculo com a tabela `medico`.
     StatusAgendamento:
       type: string
@@ -1271,7 +1302,7 @@ components:
         pacienteId:
           type: integer
           format: int64
-          description: Somente `ADMINISTRADOR` informa outro paciente; para `PACIENTE` é ignorado e usado o usuário autenticado.
+          description: Somente `ADMIN` informa outro paciente; para `PACIENTE` é ignorado e usado o usuário autenticado.
         inicio:
           type: string
           format: date-time

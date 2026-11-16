@@ -1,6 +1,6 @@
--- Agenda SA - validação das restrições do banco (V1 + V2)
+-- Agenda SA - validação das restrições do banco (V1 a V3)
 --
--- Rode num banco onde o Flyway já aplicou V1 e V2 (psql, DBeaver ou pgAdmin).
+-- Rode num banco onde o Flyway já aplicou V1, V2 e V3 (psql, DBeaver ou pgAdmin).
 -- Tudo acontece numa transação desfeita no fim: nenhum dado fica gravado.
 -- Cada verificação imprime "OK: ..."; a primeira que falhar interrompe com "FALHOU: ...".
 -- No DBeaver, as mensagens aparecem na aba "Output" (habilite "Show server output").
@@ -11,7 +11,7 @@ BEGIN;
 INSERT INTO usuario (nome, email, senha_hash, perfil)
 VALUES ('Validação Paciente A', 'validacao.a@example.com', 'hash', 'PACIENTE'),
        ('Validação Paciente B', 'validacao.b@example.com', 'hash', 'PACIENTE'),
-       ('Validação Admin', 'validacao.admin@example.com', 'hash', 'ADMINISTRADOR');
+       ('Validação Admin', 'validacao.admin@example.com', 'hash', 'ADMIN');
 
 INSERT INTO medico (nome, crm, uf_crm, especialidade)
 VALUES ('Validação Médico 1', 'VAL-0001', 'SC', 'Clínica geral'),
@@ -38,10 +38,10 @@ BEGIN
 
     BEGIN
         INSERT INTO usuario (nome, email, senha_hash, perfil)
-        VALUES ('Perfil antigo', 'validacao.antigo@example.com', 'hash', 'ADMIN');
-        RAISE EXCEPTION 'FALHOU: perfil ADMIN (anterior à V2) foi aceito';
+        VALUES ('Perfil antigo', 'validacao.antigo@example.com', 'hash', 'ADMINISTRADOR');
+        RAISE EXCEPTION 'FALHOU: perfil ADMINISTRADOR (da V2) foi aceito depois da V3';
     EXCEPTION WHEN check_violation THEN
-        RAISE NOTICE 'OK: perfil ADMIN é rejeitado depois da V2';
+        RAISE NOTICE 'OK: perfil ADMINISTRADOR é rejeitado depois da V3';
     END;
 
     INSERT INTO usuario (nome, email, senha_hash, perfil)

@@ -1,6 +1,6 @@
 # Contrato da API — Agendamentos SA
 
-[openapi.yaml](openapi.yaml) é o contrato REST (OpenAPI 3.0.3, versão 1.1.0) usado pelo backend, pelo painel web e pelo app.
+[openapi.yaml](openapi.yaml) é o contrato REST (OpenAPI 3.0.3, versão 1.2.0) usado pelo backend, pelo painel web e pelo app.
 
 ## Como ver
 

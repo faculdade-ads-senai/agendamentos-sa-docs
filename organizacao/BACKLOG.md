@@ -93,10 +93,11 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 | [APR-01](#apr-01) | Preparar a apresentação e as respostas técnicas individuais | Backlog | Todos (coordenação: Luís) | 07/12 |
 | [BE-03](#be-03) | Implementar o cadastro de médicos | Pronto para iniciar | Yuri (ele se atribuiu no Trello em 27/10; divisão a confirmar no DEC-02) | 25/11 |
 | [DOC-02](#doc-02) | Migrar a documentação do Drive para o repositório agendamentos-sa-docs | Em andamento | Luís | 16/11 |
-| [DB-02](#db-02) | Validar as migrações V1 e V2 no PostgreSQL | Em andamento | Luís (apoio: Yuri ou Pierre) | 20/11 |
+| [DB-02](#db-02) | Validar as migrações V1 a V3 no PostgreSQL | Em andamento | Luís (apoio: Yuri ou Pierre) | 20/11 |
 | [DB-04](#db-04) | Criar o banco de produção na nuvem | Em andamento | Luís | 19/11 |
 | [BE-01](#be-01) | Completar a base do backend e o ambiente local | Em andamento | Yuri e Pierre | 20/11 |
 | [BE-02](#be-02) | Implementar autenticação, cadastro e perfil do usuário | Em andamento | Yuri | 22/11 |
+| [BE-04](#be-04) | Concluir agenda e bloqueios (PR #2) | Em andamento | Pierre | 19/11 |
 | [FE-01W](#fe-01w) | Estruturar a base do painel web administrativo | Em andamento | Victor | 20/11 |
 | [FE-02](#fe-02) | Implementar autenticação no painel e no app | Em andamento | Victor | 25/11 |
 | [INT-01](#int-01) | Integrar painel e app com o backend pelo contrato v1 | Em andamento | Victor, Yuri e Pierre (coordenação: Luís) | 04/12 |
@@ -106,7 +107,6 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 | [DB-01](#db-01) | Revisar e aprovar o modelo de dados | Em revisão | Luís (revisores: Yuri e Pierre) | 18/11 |
 | [DB-03](#db-03) | Carregar dados de demonstração no perfil dev | Em revisão | Luís | 20/11 |
 | [API-01](#api-01) | Revisar e congelar o contrato OpenAPI v1 | Em revisão | Luís (revisores: Yuri, Pierre e Victor) | 20/11 |
-| [BE-04](#be-04) | Concluir agenda e bloqueios (PR #2) | Em revisão | Pierre | 19/11 |
 | [DEC-01](#dec-01) | Definir os clientes: painel web + app React + Capacitor | Concluído | Luís | 15/11 |
 
 ## Rastreabilidade: requisito → cartões
@@ -201,7 +201,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Entidade Agendamento e repositório (o BE-09 usa a mesma)
 - [ ] POST /agendamentos: lock no médico, janela ativa, sem bloqueio, início futuro e duração da janela
 - [ ] Traduzir exclusion_violation em 409
-- [ ] GET /agendamentos/{id} só para o dono ou ADMINISTRADOR
+- [ ] GET /agendamentos/{id} só para o dono ou ADMIN
 - [ ] PATCH cancelamento: status CANCELADA, cancelado_em, cancelado_por_id e motivo conforme DEC-03
 - [ ] PATCH reagendamento: novo intervalo validado na mesma transação
 - [ ] Gravar a notificação PENDENTE na mesma transação (base do DIST-01)
@@ -238,8 +238,8 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 - [ ] Usar a entidade Agendamento do BE-05 (combinar com o Yuri)
 - [ ] GET /agendamentos/me: próximas (AGENDADA e futuras) e histórico (passadas, canceladas e concluídas), paginado
-- [ ] GET /agendamentos para ADMINISTRADOR com filtros de período, médico, paciente e status
-- [ ] Histórico de um paciente para o ADMINISTRADOR (filtro por paciente)
+- [ ] GET /agendamentos para ADMIN com filtros de período, médico, paciente e status
+- [ ] Histórico de um paciente para o ADMIN (filtro por paciente)
 - [ ] Definir como a consulta vira CONCLUIDA: médico marca, administrador marca ou automático depois do horário (DEC-02)
 - [ ] Testes: paciente só vê as próprias consultas; filtros combinados
 - [ ] Atualizar x-status no openapi.yaml
@@ -379,7 +379,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Decidir com o grupo se a API será publicada e quem publica (DEC-02); o enunciado fala em backend hospedado em nuvem
 - [ ] Decidir onde publicar: serviço que rode Java/Docker, como Render, Railway ou uma EC2 (a Vercel serve para o painel, não para a API)
 - [ ] Criar o Dockerfile do backend
-- [ ] Configurar DB_* e o segredo do JWT no provedor, fora do Git
+- [ ] Configurar DB_* e JWT_SECRET no provedor, fora do Git (o valor padrão do application.yaml não serve para produção)
 - [ ] Ativar HTTPS e liberar no CORS o painel e o app
 - [ ] Confirmar que o perfil dev não está ativo em produção
 - [ ] Registrar a URL publicada em banco-de-dados/AMBIENTES.md
@@ -683,7 +683,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] POST /medicos e GET /medicos/{id}
 - [ ] PATCH /medicos/{id}, incluindo ativar e desativar
 - [ ] Traduzir CRM/UF repetido (uk_medico_crm_uf) em 409
-- [ ] Restringir escrita a ADMINISTRADOR
+- [ ] Restringir escrita a ADMIN
 - [ ] Testes de duplicidade, validação e permissão
 - [ ] Atualizar x-status no openapi.yaml
 
@@ -714,14 +714,14 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Tarefas**
 
-- [ ] Criar o repositório luisctorrens/agendamentos-sa-docs
-- [ ] Converter “Trabalho SA - Desenvolvimento WEB” para requisitos/REQUISITOS.md
-- [ ] Juntar os quatro arquivos de arquitetura em arquitetura/ARQUITETURA.md
-- [ ] Copiar modelagem, script de validação, contrato e backlog
-- [ ] Escrever o README com índice e links dos repositórios
+- [x] Criar o repositório luisctorrens/agendamentos-sa-docs
+- [x] Converter “Trabalho SA - Desenvolvimento WEB” para requisitos/REQUISITOS.md
+- [x] Juntar os quatro arquivos de arquitetura em arquitetura/ARQUITETURA.md
+- [x] Copiar modelagem, script de validação, contrato e backlog
+- [x] Escrever o README com índice e links dos repositórios
 - [ ] Dar acesso de escrita a Yuri, Pierre e Victor
 - [ ] Avisar no grupo que o Drive deixa de ser atualizado e deixar lá o link do repositório
-- [ ] Renomear o quadro do Trello para “Agenda SA” (era “Agenda SA — Web Responsivo”)
+- [x] Renomear o quadro do Trello para “Agendamentos SA” (era “Agenda SA — Web Responsivo”)
 
 **Critérios de aceite**
 
@@ -733,13 +733,13 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 <a id="db-02"></a>
 
-#### DB-02 — Validar as migrações V1 e V2 no PostgreSQL
+#### DB-02 — Validar as migrações V1 a V3 no PostgreSQL
 
 **Lista:** Em andamento · **Responsável:** Luís (apoio: Yuri ou Pierre) · **Etiquetas:** Banco de dados, Backend, Testes, Prioridade alta · **Prazo (proposta):** 20/11
 
 **Objetivo.** Provar no banco real que as restrições seguram as regras críticas.
 
-**Contexto.** Segundo o Luís, a V1 rodou no PostgreSQL do Yuri. O script validacao_restricoes.sql testa as restrições numa transação e desfaz tudo no fim; ainda não foi executado. Concorrência real precisa de duas conexões, com roteiro manual no fim do script.
+**Contexto.** Segundo o Luís, a V1 rodou no PostgreSQL do Yuri. O script validacao_restricoes.sql testa as restrições numa transação e desfaz tudo no fim; foi ajustado à V3 em 16/11 (ADMIN aceito, ADMINISTRADOR recusado) e ainda não foi executado. Sem PostgreSQL no PC do Luís, a execução prevista é numa branch de teste do Neon, pelo SQL Editor. Concorrência real precisa de duas conexões, com roteiro manual no fim do script.
 
 **Escopo.** Inclui: banco vazio local; banco de produção depois do DB-04; roteiro manual de concorrência. Não inclui: teste de carga (QA-01).
 
@@ -749,8 +749,9 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 **Tarefas**
 
 - [x] V1 aplicada no PostgreSQL do Yuri (relatado pelo Luís)
-- [ ] Confirmar se a V2 também foi aplicada (tabela flyway_schema_history) — a confirmar
-- [ ] Aplicar V1 + V2 num banco vazio e subir o backend com ddl-auto=validate
+- [ ] Confirmar se V2 e V3 também foram aplicadas (tabela flyway_schema_history) — a confirmar
+- [x] Ajustar validacao_restricoes.sql à V3 (16/11)
+- [ ] Aplicar V1 a V3 num banco vazio e subir o backend com ddl-auto=validate
 - [ ] Rodar validacao_restricoes.sql e guardar a saída
 - [ ] Rodar o roteiro de concorrência: duas conexões, mesmo médico e horário
 - [ ] Reiniciar o backend e confirmar que o Flyway não reaplica nada
@@ -785,10 +786,10 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Criar o projeto no Neon, na região mais próxima de onde o backend for publicado (São Paulo, se houver — a confirmar)
 - [ ] Criar o banco agenda_sa e guardar host, usuário e senha fora do repositório
 - [x] Definir a conexão com SSL: spring.datasource.url com sslmode=require no .env de produção (AMBIENTES.md)
-- [ ] Subir o backend uma vez apontando para a nuvem, sem o perfil dev, para o Flyway aplicar V1 e V2
-- [ ] Conferir flyway_schema_history (duas versões com sucesso) e a extensão btree_gist
+- [ ] Subir o backend uma vez apontando para a nuvem, sem o perfil dev, para o Flyway aplicar V1 a V3
+- [ ] Conferir flyway_schema_history (três versões com sucesso) e a extensão btree_gist
 - [ ] Rodar validacao_restricoes.sql na nuvem (ele desfaz tudo no fim)
-- [ ] Criar o administrador inicial pela API (POST /api/v1/usuarios) enquanto a rota estiver aberta
+- [ ] Criar o administrador inicial com scripts/criar-admin.sql do backend no SQL Editor do Neon (a rota de usuários exige ADMIN desde o JWT); senha provisória, trocada depois pelo painel
 - [ ] Combinar quem recebe as credenciais e por qual canal (nunca no Git nem no Trello)
 - [x] Escrever banco-de-dados/AMBIENTES.md: local x produção, variáveis e cuidados
 
@@ -809,7 +810,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** Qualquer integrante clona, preenche o .env e sobe o backend em poucos minutos.
 
-**Contexto.** Na master já existem Spring Boot 4.1.2 (Java 21), Flyway com V1 e V2, ddl-auto=validate, leitura do .env e .env no .gitignore. Faltam PostgreSQL em container, .env.example, README de execução e CORS.
+**Contexto.** Na master já existem Spring Boot 4.1.2 (Java 21), Flyway com V1 a V3, ddl-auto=validate, leitura do .env e .env no .gitignore, e o CORS do painel (entrou com o JWT em 15/11). Faltam PostgreSQL em container, .env.example, README de execução e a origem do app no CORS.
 
 **Escopo.** Inclui: docker-compose com PostgreSQL 16 ou superior; .env.example; README de execução; CORS para painel e app; perfis dev e padrão. Não inclui: publicação do backend (BE-08).
 
@@ -819,18 +820,19 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 **Tarefas**
 
 - [x] Projeto Spring Boot com JPA, Flyway, Validation e Security
-- [x] V1 e V2 em db/migration e ddl-auto=validate
+- [x] V1 a V3 em db/migration e ddl-auto=validate
 - [x] Variáveis lidas do .env, que está no .gitignore
 - [ ] Criar docker-compose.yml com PostgreSQL 16+ e volume
-- [ ] Criar .env.example com DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD e SERVER_PORT
-- [ ] Configurar CORS para o painel (Vite) e para o app Capacitor (conferir a origem usada no Android)
+- [ ] Criar .env.example com DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD, SERVER_PORT, JWT_SECRET e CORS_ALLOWED_ORIGINS
+- [x] CORS do painel: localhost:5173 e 4173, configurável por CORS_ALLOWED_ORIGINS (15/11)
+- [ ] Incluir no CORS a origem do app Capacitor no Android (conferir qual é)
 - [ ] Escrever o README: requisitos, .env, docker compose up, ./mvnw spring-boot:run, perfil dev
 - [ ] Incluir Swagger UI (springdoc) para testar as rotas — opcional
 
 **Critérios de aceite**
 
 - [ ] Clone limpo + .env + docker compose up + ./mvnw spring-boot:run sobe sem erro
-- [ ] Flyway aplica V1 e V2 num banco vazio
+- [ ] Flyway aplica V1 a V3 num banco vazio
 - [ ] O painel rodando local não é barrado por CORS
 
 **Links:** [backend](https://github.com/yuriOdsz/agendamentos-sa) · [banco-de-dados/AMBIENTES.md](../banco-de-dados/AMBIENTES.md) · [arquitetura/ARQUITETURA.md](../arquitetura/ARQUITETURA.md)
@@ -845,7 +847,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** Login com token e autorização por perfil, para os clientes deixarem de usar o login padrão do Spring Security.
 
-**Contexto.** Na master já existem o CRUD /api/v1/usuarios (criar, listar paginado, buscar, atualizar e desativar), senha com BCrypt e validação de senha. O painel hoje autentica pelo formulário padrão /login do Spring Security, com CSRF.
+**Contexto.** Desde 15/11 a master tem login com JWT (POST /auth/login, token de 1 hora), GET /auth/me, API sem estado e todo o CRUD /api/v1/usuarios restrito a ADMIN; a V3 voltou o perfil de ADMINISTRADOR para ADMIN. O guia está no AUTENTICACAO.md do backend. Faltam o autocadastro do paciente, a edição do próprio cadastro e os testes.
 
 **Escopo.** Inclui: POST /auth/cadastro (sempre PACIENTE); POST /auth/login com JWT; GET e PATCH /usuarios/me; autorização por perfil; logout no cliente. Não inclui: recuperação de senha (RF-004, depende do REQ-01).
 
@@ -857,13 +859,14 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [x] CRUD de usuários em /api/v1/usuarios
 - [x] Hash BCrypt e validação de senha
 - [ ] POST /auth/cadastro criando sempre PACIENTE
-- [ ] POST /auth/login devolvendo JWT com id e perfil e expiração definida
-- [ ] Filtro JWT e SecurityConfig sem estado (sem formulário e sem CSRF na API)
-- [ ] Restringir listar, buscar e desativar usuários a ADMINISTRADOR
-- [ ] GET e PATCH /usuarios/me para o próprio usuário
-- [ ] Usar só ADMINISTRADOR nas checagens (a V2 converteu ADMIN; o PR #2 ainda aceita ADMIN)
+- [x] POST /auth/login devolvendo JWT com expiração de 1 hora (15/11)
+- [x] Filtro JWT e SecurityConfig sem estado, sem formulário e sem CSRF (15/11)
+- [x] Restringir o CRUD /usuarios a ADMIN (15/11)
+- [x] GET /auth/me com o usuário do token (15/11)
+- [ ] PATCH do próprio cadastro (/usuarios/me no contrato; ver API-01)
+- [x] Padronizar o perfil do administrador como ADMIN (V3, 15/11)
 - [ ] Testes: login certo, senha errada, sem token, perfil sem permissão
-- [ ] Atualizar x-status no openapi.yaml
+- [x] Atualizar x-status de /auth/login e /auth/me no openapi.yaml (1.2.0)
 
 **Critérios de aceite**
 
@@ -872,7 +875,45 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Usuário desativado não consegue logar
 - [ ] Paciente só lê e altera os próprios dados
 
-**Links:** [api/openapi.yaml](../api/openapi.yaml) · [API-USUARIOS.md](https://github.com/yuriOdsz/agendamentos-sa/blob/master/API-USUARIOS.md)
+**Links:** [api/openapi.yaml](../api/openapi.yaml) · [API-USUARIOS.md](https://github.com/yuriOdsz/agendamentos-sa/blob/master/API-USUARIOS.md) · [AUTENTICACAO.md](https://github.com/yuriOdsz/agendamentos-sa/blob/master/AUTENTICACAO.md)
+
+<a id="be-04"></a>
+
+#### BE-04 — Concluir agenda e bloqueios (PR #2)
+
+**Lista:** Em andamento · **Responsável:** Pierre · **Etiquetas:** Backend · **Prazo (proposta):** 19/11
+
+**Módulo do enunciado:** 2 — Agenda de profissionais
+
+**Objetivo.** Administrador define a agenda semanal e os bloqueios; qualquer usuário consulta os horários livres.
+
+**Contexto.** O PR #2 (aberto em 02/11, com GET e PUT /medicos/{id}/agenda, GET, POST e DELETE de bloqueios e GET horarios-disponiveis, usando lock no médico) foi fechado sem merge pelo Yuri em 15/11: antes de aceitar um PR, o autor apresenta e explica a implementação ao grupo. O código continua na branch feature/api-agendas, que precisa receber o master com JWT e V3. A revisão de banco não achou problema de mapeamento; há três ajustes pequenos.
+
+**Escopo.** Inclui: rotas de agenda, bloqueios e horários disponíveis; geração de horários pela duração da janela; exclusão de horários ocupados e bloqueados. Não inclui: criação de agendamentos (BE-05).
+
+**Requisitos atendidos:** RN-005, RF-009 a RF-012, RNF-005, RNF-012  
+**Dependências:** API-01
+
+**Tarefas**
+
+- [x] Entidades AgendaMedico e BloqueioAgenda e consulta de ocupação
+- [x] Rotas de agenda, bloqueios e horários disponíveis
+- [ ] Atualizar a branch feature/api-agendas com o master (JWT e V3)
+- [ ] Apresentar e explicar a implementação ao grupo (regra para aceitar PR)
+- [ ] Reabrir o PR #2 ou abrir um novo
+- [ ] Tirar o comentário //sale do Application.java
+- [ ] Padronizar o pacote das entidades (usuarios usa model; agendas e medicos usam entity)
+- [ ] Testar as rotas no Postman ou Insomnia com os dados de demonstração (DB-03)
+- [x] PR #1 (teste) fechado pelo Yuri em 15/11
+- [ ] Fazer o merge na master
+
+**Critérios de aceite**
+
+- [ ] Janela inválida ou sobreposta é recusada com o código do contrato
+- [ ] Horário bloqueado ou ocupado não aparece em horarios-disponiveis
+- [ ] horarios-disponiveis responde em até 3 segundos com os dados de demonstração
+
+**Links:** [PR #2](https://github.com/yuriOdsz/agendamentos-sa/pull/2) · [PR #1](https://github.com/yuriOdsz/agendamentos-sa/pull/1) · [api/openapi.yaml](../api/openapi.yaml)
 
 <a id="fe-01w"></a>
 
@@ -882,7 +923,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** Ter a estrutura do painel pronta para receber as telas do administrador.
 
-**Contexto.** Repositório VictorKLing/frontend-agendamento: Vite 7, React 19 e Tailwind 4 em JavaScript, com uma tela de login e criação de conta (main.jsx) e um cliente (api.jsx) que cria conta em POST /api/v1/usuarios e autentica pelo /login do Spring Security.
+**Contexto.** Repositório VictorKLing/frontend-agendamento: Vite 7, React 19 e Tailwind 4 em JavaScript, com tela de login (main.jsx) e cliente HTTP (api.jsx). Em 15/11 o Yuri ligou o painel ao JWT: login em /auth/login, sessão no sessionStorage restaurada por /auth/me, volta ao login em 401 e CRUD de usuários para ADMIN (users/Users.jsx). A URL da API vem de VITE_API_BASE_URL ou do proxy /api do Vite.
 
 **Escopo.** Inclui: rotas; layout do painel; cliente HTTP central; componentes reaproveitáveis. Não inclui: telas do paciente (vão para o app).
 
@@ -896,8 +937,8 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Decidir JavaScript ou TypeScript (a arquitetura do Drive tem as duas versões) — a confirmar
 - [ ] React Router com rotas públicas e de administrador
 - [ ] Layout do painel: menu lateral, cabeçalho e área de conteúdo
-- [ ] Cliente HTTP central com a URL da API em VITE_API_URL e o token JWT
-- [ ] Guardar a sessão e voltar ao login em 401
+- [x] Cliente HTTP central com o token JWT e a URL em VITE_API_BASE_URL ou no proxy /api (15/11)
+- [x] Guardar a sessão e voltar ao login em 401 (15/11)
 - [ ] Componentes de UI: botão, campo, tabela, modal, carregando, lista vazia
 
 **Critérios de aceite**
@@ -917,7 +958,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** Login, cadastro e logout funcionando com JWT nos dois clientes, cada um só para o seu perfil.
 
-**Contexto.** O painel já tem tela de login e criação de conta usando o login padrão do Spring Security. Quando o BE-02 entregar o JWT, os dois clientes passam a usar POST /auth/login.
+**Contexto.** Desde 15/11 o painel entra por POST /auth/login com JWT (feito pelo Yuri junto com o BE-02). Falta o app, que usa o mesmo login e o cadastro de paciente em /auth/cadastro (ainda planejado no backend).
 
 **Escopo.** Inclui: login e logout; cadastro de paciente no app; proteção de rotas por perfil; mensagens de erro. Não inclui: recuperação de senha, salvo se RF-004 continuar na v1.
 
@@ -927,11 +968,11 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 **Tarefas**
 
 - [x] Tela de login e criação de conta no painel (login padrão do Spring)
-- [ ] Trocar o painel para POST /auth/login com JWT
+- [x] Trocar o painel para POST /auth/login com JWT (15/11)
 - [ ] Login no app com JWT
 - [ ] Cadastro de paciente no app via POST /auth/cadastro
 - [ ] Logout limpando o token nos dois clientes
-- [ ] Painel aceita só ADMINISTRADOR; app aceita só PACIENTE
+- [ ] Painel aceita só ADMIN; app aceita só PACIENTE
 - [ ] Mensagens de erro sem detalhes internos
 - [ ] Recuperação de senha só se RF-004 ficar na v1
 
@@ -950,7 +991,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** Os dois clientes funcionam de ponta a ponta com o backend, sem divergência do contrato.
 
-**Contexto.** A primeira integração (criar conta e login no painel) já foi feita pelo Victor. Uma coleção do Postman ou Insomnia serve para testar e para a apresentação, que em Distribuídos foi feita assim em 03/11.
+**Contexto.** A primeira integração (criar conta e login no painel) foi feita pelo Victor; em 15/11 o Yuri ligou o painel ao login JWT e ao CRUD de usuários. Uma coleção do Postman ou Insomnia serve para testar e para a apresentação, que em Distribuídos foi feita assim em 03/11.
 
 **Escopo.** Inclui: coleção de requisições; conferência tela x contrato; fuso horário; CORS e autenticação local e publicada. Não inclui: novas funcionalidades.
 
@@ -960,6 +1001,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 **Tarefas**
 
 - [x] Primeira integração: criar conta e login no painel
+- [x] Login JWT e CRUD de usuários do painel ligados ao backend (15/11)
 - [ ] Coleção do Postman ou Insomnia com todas as rotas e exemplos
 - [ ] Conferir cada tela contra o openapi.yaml
 - [ ] Datas enviadas com fuso e exibidas em America/Sao_Paulo
@@ -1001,7 +1043,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Aprovar canal SISTEMA na v1; EMAIL só se sobrar tempo (proposta)
 - [ ] Aprovar lembrete 24 horas antes da consulta (proposta)
 - [ ] Decidir se Médico e Recepcionista ganham telas na v1 ou ficam para depois
-- [ ] Se o médico entrar: V3 com medico.usuario_id (Luís), rotas de minha agenda e de concluir consulta (backend) e telas (Victor)
+- [ ] Se o médico entrar: V4 com medico.usuario_id (Luís), rotas de minha agenda e de concluir consulta (backend) e telas (Victor)
 - [ ] Se o recepcionista entrar: permissões para cadastrar paciente e agendar ou cancelar por ele (backend) e telas (Victor); o banco já guarda quem agendou (criado_por_id)
 - [ ] Confirmar a divisão do backend: ímpares com o Yuri (1, 3, 5) e pares com o Pierre (2, 4); o Yuri se atribuiu ao cadastro de médicos (módulo 2) em 27/10
 - [ ] Decidir se a API será publicada na nuvem e quem publica (BE-08)
@@ -1038,7 +1080,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [x] Cancelar grava cancelado_em e cancelado_por_id e mantém a consulta no histórico (modelo 1.1)
 - [ ] Aprovar: sem antecedência mínima; só consultas futuras com status AGENDADA (proposta)
 - [ ] Aprovar: motivo do cancelamento opcional (proposta)
-- [ ] Aprovar: ADMINISTRADOR cancela ou reagenda qualquer consulta (proposta)
+- [ ] Aprovar: ADMIN cancela ou reagenda qualquer consulta (proposta)
 - [ ] Aprovar: paciente altera só as próprias consultas futuras (proposta)
 - [ ] Escrever as regras na descrição das duas rotas no openapi.yaml
 
@@ -1089,7 +1131,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** Congelar tabelas, colunas, perfis e status da versão 1.
 
-**Contexto.** A V1 (estrutura) e a V2 (perfis) estão na master do backend. A modelagem 1.1 documenta as duas: diagrama, dicionário, restrições, gatilhos e o conceito distribuído.
+**Contexto.** A V1 (estrutura), a V2 (perfis) e a V3 (ADMINISTRADOR volta a ser ADMIN, 15/11) estão na master do backend. A modelagem documenta as três: diagrama, dicionário, restrições, gatilhos e o conceito distribuído.
 
 **Escopo.** Inclui: usuario, medico, agenda_medico, bloqueio_agenda, agendamento e notificacao; perfis e status; restrições de exclusão e gatilhos de atualizado_em. Não inclui: prontuário e dados clínicos; unidades de saúde.
 
@@ -1099,15 +1141,16 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 **Tarefas**
 
 - [x] Atualizar MODELO_DADOS.md para a versão 1.1 (V2, perfis, decisões, notificações assíncronas)
+- [x] Registrar a V3 (perfil ADMIN) no MODELO_DADOS.md (16/11)
 - [ ] Yuri confere usuario e perfis contra as classes Usuario e Perfil
 - [ ] Pierre confere medico, agenda_medico e bloqueio_agenda contra o PR #2
 - [ ] Conferir agendamento e notificacao contra as rotas planejadas do contrato
-- [ ] Decidir se entra a V3 opcional (índice único parcial em agenda_medico)
+- [ ] Decidir se entra a V4 opcional (índice único parcial em agenda_medico)
 - [ ] Registrar no documento a data de congelamento
 
 **Critérios de aceite**
 
-- [ ] Diagrama e dicionário batem com V1 + V2
+- [ ] Diagrama e dicionário batem com V1 a V3
 - [ ] O backend sobe com ddl-auto=validate sem divergência de colunas
 - [ ] Depois do congelamento, mudança só por nova migração (V3, V4...) revisada
 
@@ -1121,9 +1164,9 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** Qualquer integrante sobe o backend local já com usuários, médicos, agendas e consultas para testar.
 
-**Contexto.** O script repetível R__dados_demonstracao.sql só roda com SPRING_PROFILES_ACTIVE=dev (application-dev.yaml inclui classpath:db/dev). Está na branch local feature/banco-dados-demonstracao, ainda não publicada.
+**Contexto.** O script repetível R__dados_demonstracao.sql só roda com SPRING_PROFILES_ACTIVE=dev (application-dev.yaml inclui classpath:db/dev). Está na branch local feature/banco-dados-demonstracao, ainda não publicada; em 16/11 a branch foi atualizada para o master com JWT e o administrador de demonstração passou a usar o perfil ADMIN (V3), o que permite entrar no painel com ele. Pela regra do grupo, o Luís apresenta o PR antes do aceite.
 
-**Escopo.** Inclui: 1 administrador e 2 pacientes (senha Demo@1234); 3 médicos fictícios (CRM DEMO-1001 a 1003/SC); 11 janelas de agenda e 1 bloqueio; 4 consultas: 2 futuras, 1 concluída, 1 cancelada; notificações de confirmação, lembrete e cancelamento. Não inclui: dados reais; banco de produção.
+**Escopo.** Inclui: 1 administrador (ADMIN) e 2 pacientes (senha Demo@1234); 3 médicos fictícios (CRM DEMO-1001 a 1003/SC); 11 janelas de agenda e 1 bloqueio; 4 consultas: 2 futuras, 1 concluída, 1 cancelada; notificações de confirmação, lembrete e cancelamento. Não inclui: dados reais; banco de produção.
 
 **Requisitos atendidos:** RNF-015, RNF-018  
 **Dependências:** DB-02
@@ -1132,6 +1175,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 - [x] Escrever R__dados_demonstracao.sql com ON CONFLICT e NOT EXISTS (repetível)
 - [x] Criar application-dev.yaml com a pasta db/dev no Flyway
+- [x] Atualizar a branch para o master com JWT e usar o perfil ADMIN (V3)
 - [ ] Rodar com o perfil dev num banco vazio
 - [ ] Rodar de novo e confirmar que nada duplica
 - [ ] Subir sem o perfil dev e confirmar que nada é inserido
@@ -1154,7 +1198,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 **Objetivo.** Backend, painel e app trabalham pelo mesmo contrato.
 
-**Contexto.** openapi.yaml 1.1.0: 11 operações marcadas como implementadas (usuários e agenda) e 17 planejadas. Paginação e erros seguem o que o código devolve hoje (ProblemDetail com a lista erros[campo, mensagem]). Validado com Redocly sem erros.
+**Contexto.** openapi.yaml 1.2.0 (16/11): 13 operações implementadas (login, /auth/me, usuários e agenda) e 16 planejadas. A 1.2.0 acompanha o master com JWT: perfil ADMIN, login implementado e CRUD /usuarios restrito a ADMIN. Paginação e erros seguem o que o código devolve hoje (ProblemDetail com a lista erros[campo, mensagem]). A 1.1.0 foi validada com Redocly sem erros.
 
 **Escopo.** Inclui: todas as rotas /api/v1; schemas e exemplos; códigos de erro; marcação x-status. Não inclui: o processo interno de envio de notificações (DIST-01).
 
@@ -1164,11 +1208,14 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 **Tarefas**
 
 - [x] Alinhar /usuarios e a agenda ao código (master e PR #2)
-- [x] Validar o arquivo com Redocly
+- [x] Validar o arquivo com Redocly (1.1.0)
+- [x] Alinhar ao login JWT e à V3 do master (1.2.0, 16/11)
+- [ ] Validar a 1.2.0 com Redocly
 - [ ] Yuri confere autenticação, usuários e médicos
 - [ ] Pierre confere agenda, agendamentos e notificações
 - [ ] Victor confere se as telas têm todos os campos de que precisam
-- [ ] Decidir se POST /usuarios continua aberto ou passa a exigir ADMINISTRADOR quando /auth/cadastro existir
+- [x] POST /usuarios passa a exigir ADMIN (decidido no código do JWT, 15/11)
+- [ ] Decidir entre GET /auth/me (código) e GET /usuarios/me (contrato) para o próprio cadastro
 - [ ] Decidir se GET /usuarios ganha filtro por perfil (RF-008 lista pacientes)
 - [ ] Decidir o formato de hora: HH:mm ou HH:mm:ss
 - [ ] Congelar a versão e registrar a data no arquivo
@@ -1180,42 +1227,6 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 - [ ] Erros em application/problem+json
 
 **Links:** [api/openapi.yaml](../api/openapi.yaml)
-
-<a id="be-04"></a>
-
-#### BE-04 — Concluir agenda e bloqueios (PR #2)
-
-**Lista:** Em revisão · **Responsável:** Pierre · **Etiquetas:** Backend · **Prazo (proposta):** 19/11
-
-**Módulo do enunciado:** 2 — Agenda de profissionais
-
-**Objetivo.** Administrador define a agenda semanal e os bloqueios; qualquer usuário consulta os horários livres.
-
-**Contexto.** PR #2 aberto desde 02/11 com GET e PUT /medicos/{id}/agenda, GET, POST e DELETE de bloqueios e GET horarios-disponiveis, usando lock no médico. A revisão de banco não achou problema de mapeamento; há três ajustes pequenos antes do merge.
-
-**Escopo.** Inclui: rotas de agenda, bloqueios e horários disponíveis; geração de horários pela duração da janela; exclusão de horários ocupados e bloqueados. Não inclui: criação de agendamentos (BE-05).
-
-**Requisitos atendidos:** RN-005, RF-009 a RF-012, RNF-005, RNF-012  
-**Dependências:** API-01
-
-**Tarefas**
-
-- [x] Entidades AgendaMedico e BloqueioAgenda e consulta de ocupação
-- [x] Rotas de agenda, bloqueios e horários disponíveis
-- [ ] Postar no PR o comentário da revisão de banco
-- [ ] Tirar o comentário //sale do Application.java
-- [ ] Padronizar o pacote das entidades (usuarios usa model; agendas e medicos usam entity)
-- [ ] Testar as rotas no Postman ou Insomnia com os dados de demonstração (DB-03)
-- [ ] Fechar o PR #1 (teste), que só altera uma linha
-- [ ] Fazer o merge na master
-
-**Critérios de aceite**
-
-- [ ] Janela inválida ou sobreposta é recusada com o código do contrato
-- [ ] Horário bloqueado ou ocupado não aparece em horarios-disponiveis
-- [ ] horarios-disponiveis responde em até 3 segundos com os dados de demonstração
-
-**Links:** [PR #2](https://github.com/yuriOdsz/agendamentos-sa/pull/2) · [PR #1](https://github.com/yuriOdsz/agendamentos-sa/pull/1) · [api/openapi.yaml](../api/openapi.yaml)
 
 ### Concluído
 

@@ -2,12 +2,12 @@
 
 Versão 1.1 — 15/11/2026. Substitui a proposta de 27/10.
 
-Situação: a migração V1 está no backend (`src/main/resources/db/migration`) e já foi aplicada no PostgreSQL de desenvolvimento do Yuri. A V2 ampliou os perfis de usuário. Este documento descreve o banco como ele está no repositório do backend. Onde cada ambiente roda está em [AMBIENTES.md](AMBIENTES.md).
+Situação: a migração V1 está no backend (`src/main/resources/db/migration`) e já foi aplicada no PostgreSQL de desenvolvimento do Yuri. A V2 ampliou os perfis de usuário e a V3 devolveu ao administrador o nome `ADMIN`. Este documento descreve o banco como ele está no repositório do backend. Onde cada ambiente roda está em [AMBIENTES.md](AMBIENTES.md).
 
 ## Mudanças desde a versão 1
 
 - Clientes: painel web (React + Vite) e aplicativo React + Capacitor (Android), conforme decisão do grupo de 15/11. O banco não muda com isso: os dois clientes usam a mesma API e nenhum acessa o banco direto.
-- Perfis: a V2 trocou `ADMIN` por `ADMINISTRADOR` e passou a aceitar `MEDICO` e `RECEPCIONISTA`. Se esses dois ganham telas na versão 1 está em decisão no grupo (DEC-02; ver "Perfis").
+- Perfis: a V2 trocou `ADMIN` por `ADMINISTRADOR` e passou a aceitar `MEDICO` e `RECEPCIONISTA`; a V3 (Yuri, 15/11, junto com o login JWT) voltou para `ADMIN`. Valem `ADMIN`, `PACIENTE`, `MEDICO` e `RECEPCIONISTA`. Se esses dois ganham telas na versão 1 está em decisão no grupo (DEC-02; ver "Perfis").
 - Datas de criação e atualização: confirmado que o PostgreSQL cuida delas (padrão `CURRENT_TIMESTAMP` e gatilho). O Hibernate só lê (`@Generated`), como já está nas entidades.
 - Novos materiais: script de validação das restrições ([validacao_restricoes.sql](validacao_restricoes.sql)) e dados de demonstração para desenvolvimento (`R__dados_demonstracao.sql` no backend, perfil `dev`).
 - Decisões pendentes da versão 1 agora têm proposta (ver o fim do documento).
@@ -19,7 +19,7 @@ Situação: a migração V1 está no backend (`src/main/resources/db/migration`)
 | Banco | PostgreSQL 16+ | Confirmado: Flyway no backend e V1 aplicada. Integridade transacional e restrição de conflito de horários no próprio banco. |
 | Migrações | Flyway, `ddl-auto=validate` | O banco é definido pelas migrações; o Hibernate só confere se as entidades batem com ele. |
 | Clientes | Painel web e app React + Capacitor | Os dois consomem a mesma API REST. |
-| Perfis com uso na v1 | `ADMINISTRADOR` e `PACIENTE` | São os perfis citados nos requisitos funcionais. |
+| Perfis com uso na v1 | `ADMIN` e `PACIENTE` | São os perfis citados nos requisitos funcionais. |
 | Perfis `MEDICO` e `RECEPCIONISTA` | Aceitos pela V2; uso em decisão (DEC-02) | Médico com login exige a migração descrita em "Perfis"; recepcionista não muda o banco (`criado_por_id` já registra quem agendou). |
 | Médico | Entidade sem login, até o DEC-02 | Gerenciado pelo administrador. Hoje não há vínculo entre `medico` e `usuario`. |
 | Especialidade | Atributo de médico | Evita CRUD e tabela adicionais antes de existir necessidade real. |
@@ -38,6 +38,7 @@ Os arquivos ficam no backend, em `src/main/resources/db/migration` (V) e `src/ma
 |---|---|---|---|
 | V1 | `V1__criar_estrutura_inicial.sql` | Luís | Tabelas, restrições, índices e gatilhos descritos aqui. |
 | V2 | `V2__atualizar_perfis_usuario.sql` | Yuri | `ADMIN` vira `ADMINISTRADOR`; perfis aceitos: `ADMINISTRADOR`, `PACIENTE`, `MEDICO`, `RECEPCIONISTA`. |
+| V3 | `V3__renomear_perfil_admin.sql` | Yuri | `ADMINISTRADOR` volta a ser `ADMIN`; perfis aceitos: `ADMIN`, `PACIENTE`, `MEDICO`, `RECEPCIONISTA`. |
 | R (dev) | `R__dados_demonstracao.sql` | Luís | Dados fictícios para desenvolvimento e demonstração. Só roda com o perfil `dev`, nunca em produção. |
 
 A extensão `btree_gist`, criada pela V1, é confiável desde o PostgreSQL 13: o dono do banco consegue criá-la sem superusuário. O Neon, usado em produção, oferece a extensão.
@@ -60,7 +61,7 @@ erDiagram
         varchar nome
         varchar email UK "único sem diferenciar maiúsculas"
         varchar senha_hash "BCrypt"
-        varchar perfil "ADMINISTRADOR, PACIENTE, MEDICO, RECEPCIONISTA"
+        varchar perfil "ADMIN, PACIENTE, MEDICO, RECEPCIONISTA"
         boolean ativo
         timestamptz criado_em
         timestamptz atualizado_em
@@ -144,7 +145,7 @@ erDiagram
 
 | Perfil | Uso na versão 1 |
 |---|---|
-| `ADMINISTRADOR` | Gerencia médicos, agendas, bloqueios, pacientes e qualquer agendamento. |
+| `ADMIN` | Gerencia médicos, agendas, bloqueios, pacientes e qualquer agendamento. |
 | `PACIENTE` | Cadastra-se, agenda, cancela e reagenda as próprias consultas e vê o próprio histórico. |
 | `MEDICO` | Em decisão (DEC-02). Hoje não tem permissões próprias e não está ligado à tabela `medico`. Se entrar: vê a própria agenda e conclui a consulta. |
 | `RECEPCIONISTA` | Em decisão (DEC-02). Hoje não tem permissões próprias. Se entrar: cadastra paciente e agenda ou cancela por ele. |
@@ -208,7 +209,7 @@ As validações abaixo dependem de contexto e devem rodar numa transação no ba
 4. O intervalo não pode interceptar `bloqueio_agenda` ativo.
 5. O início deve ser futuro no momento da confirmação.
 6. O fim deve corresponder à duração configurada na janela.
-7. Cancelamento e reagendamento exigem o próprio paciente ou um `ADMINISTRADOR`.
+7. Cancelamento e reagendamento exigem o próprio paciente ou um `ADMIN`.
 8. O histórico do paciente sempre filtra pelo usuário autenticado.
 9. Quem reserva bloqueia antes a linha do médico (`SELECT ... FOR UPDATE`), como já faz o módulo de agendas, para não reservar enquanto a agenda ou um bloqueio está sendo alterado.
 
@@ -230,6 +231,6 @@ As validações abaixo dependem de contexto e devem rodar numa transação no ba
 | Lembrete | Proposta: 24 horas antes da consulta |
 | Antecedência para cancelar ou reagendar | Proposta: sem antecedência mínima; só consultas futuras e `AGENDADA` |
 | Motivo do cancelamento | Proposta: opcional |
-| `ADMINISTRADOR` cancela ou reagenda qualquer consulta | Proposta: sim |
+| `ADMIN` cancela ou reagenda qualquer consulta | Proposta: sim |
 | Paciente altera só as próprias consultas futuras | Proposta: sim |
 | Recuperação de senha (RF-004) | Pendente: o banco não guarda token de recuperação. Ou fica fora da v1, ou ganha uma migração com tabela de tokens (hash, validade e uso único) |

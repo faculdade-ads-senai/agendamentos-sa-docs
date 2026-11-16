@@ -41,7 +41,7 @@ Quem discordar abre uma issue ou fala no grupo; sem objeção, valem como decidi
 
 Em aberto, sem proposta (precisa de resposta do grupo):
 
-- Perfis `MEDICO` e `RECEPCIONISTA`: ganham telas na versão 1 ou ficam para depois? Se entrarem, o médico vê a própria agenda e conclui a consulta, e o recepcionista cadastra o paciente e agenda ou cancela por ele. O médico exige uma migração nova (V3, `medico.usuario_id`) e mudanças no backend; o recepcionista só muda o backend.
+- Perfis `MEDICO` e `RECEPCIONISTA`: ganham telas na versão 1 ou ficam para depois? Se entrarem, o médico vê a própria agenda e conclui a consulta, e o recepcionista cadastra o paciente e agenda ou cancela por ele. O médico exige uma migração nova (V4, `medico.usuario_id`) e mudanças no backend; o recepcionista só muda o backend.
 - Divisão do backend por módulo: Yuri com os módulos 1, 3 e 5 e Pierre com os módulos 2 e 4 (lembrança do Luís, a confirmar). O Yuri se atribuiu ao cadastro de médicos (módulo 2) no Trello em 27/10.
 - Publicação da API na nuvem e quem publica (o enunciado fala em backend hospedado em nuvem).
 - Painel e app no mesmo projeto React.

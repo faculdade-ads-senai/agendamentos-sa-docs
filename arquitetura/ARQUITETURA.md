@@ -16,7 +16,7 @@ flowchart LR
 | API | Spring Boot 4.1, Java 21, Spring Data JPA, Flyway, Spring Security | `yuriOdsz/agendamentos-sa` | CRUD de usuários pronto; agenda, bloqueios e horários disponíveis no PR #2 |
 | Painel web | React 19, Vite, Tailwind CSS (JavaScript) | `VictorKLing/frontend-agendamento` | Login e usuários integrados |
 | App do paciente | React, Vite, Capacitor (Android) | a criar | Não iniciado |
-| Banco | PostgreSQL 16+ | migrações no backend (`src/main/resources/db/migration`) | V1 e V2 prontas; produção no Neon (ver [ambientes](../banco-de-dados/AMBIENTES.md)) |
+| Banco | PostgreSQL 16+ | migrações no backend (`src/main/resources/db/migration`) | V1, V2 e V3 prontas; produção no Neon (ver [ambientes](../banco-de-dados/AMBIENTES.md)) |
 | Documentação | Markdown e OpenAPI | `agendamentos-sa-docs` (este) | Versão 1.1 |
 
 Princípios:

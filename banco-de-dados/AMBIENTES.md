@@ -25,7 +25,7 @@ Nos dois ambientes a estrutura vem das mesmas migrações Flyway do backend. Nin
    DB_PASSWORD=postgres
    ```
 
-3. Rode o backend. Na primeira subida o Flyway aplica V1 e V2.
+3. Rode o backend. Na primeira subida o Flyway aplica V1, V2 e V3.
 4. Para ter dados de demonstração, rode com `SPRING_PROFILES_ACTIVE=dev`. Usuários: `admin.demo@example.com`, `ana.demo@example.com` e `bruno.demo@example.com`, senha `Demo@1234`. Depende do PR dos dados de demonstração estar na `master`.
 5. Para conferir as restrições do banco, rode [validacao_restricoes.sql](validacao_restricoes.sql) no DBeaver, pgAdmin ou psql. Ele desfaz tudo no fim.
 
@@ -45,7 +45,7 @@ Para recomeçar do zero: apague e recrie o banco `agenda_sa` e suba o backend de
 2. Projeto `agendamentos-sa`, PostgreSQL 17, região AWS São Paulo (`sa-east-1`) se ela aparecer na lista. Se não aparecer, use a mesma região onde o backend for publicado.
 3. Banco `agenda_sa` (o Neon cria um `neondb` padrão; crie o `agenda_sa` em Databases ou use `DB_NAME=neondb`).
 4. Em **Connect**, copie host, usuário e senha da conexão direta (o host sem `-pooler`).
-5. Primeira subida: um `.env` com os dados de produção e o backend rodando **sem** o perfil `dev`. O Flyway cria a `flyway_schema_history` e aplica V1 e V2.
+5. Primeira subida: um `.env` com os dados de produção e o backend rodando **sem** o perfil `dev`. O Flyway cria a `flyway_schema_history` e aplica V1, V2 e V3.
 
    ```properties
    spring.datasource.url=jdbc:postgresql://<host-do-neon>/agenda_sa?sslmode=require
@@ -61,9 +61,9 @@ Para recomeçar do zero: apague e recrie o banco `agenda_sa` e suba o backend de
    SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank;
    ```
 
-   Devem aparecer V1 e V2 com `success = true`.
+   Devem aparecer V1, V2 e V3 com `success = true`.
 
-7. Primeiro administrador: enquanto `POST /api/v1/usuarios` estiver aberto, crie pelo Postman ou Insomnia um usuário com perfil `ADMINISTRADOR`. Quando o login com JWT entrar (cartão BE-02), esse passo muda.
+7. Primeiro administrador: desde o login com JWT (15/11), `POST /api/v1/usuarios` exige um `ADMIN` logado. O primeiro é criado direto no banco com o `scripts/criar-admin.sql` do backend, no SQL Editor do Neon (troque nome, e-mail e senha no próprio editor). O editor guarda o histórico das consultas: use uma senha provisória e troque-a em seguida pelo painel (edição de usuário). Os próximos usuários saem pelo painel.
 
 ### Regras
 
