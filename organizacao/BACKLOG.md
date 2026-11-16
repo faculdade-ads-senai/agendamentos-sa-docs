@@ -48,6 +48,21 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 - Apresentação (nova)
 - Prioridade alta
 
+## Módulos do enunciado
+
+O enunciado divide o sistema em 6 módulos. O professor descartou a ideia de uma equipe por módulo: cada equipe faz o sistema inteiro. No grupo, o front de todos os módulos é do Victor e o banco de todos é do Luís. A divisão do backend abaixo é a lembrada pelo Luís e ainda precisa de confirmação (DEC-02).
+
+| Módulo | Backend | Cartões |
+|---|---|---|
+| 1 — Cadastro e autenticação | Yuri | [BE-02](#be-02), [FE-02](#fe-02) |
+| 2 — Agenda de profissionais | Pierre (agenda); Yuri (cadastro de médicos) | [BE-03](#be-03), [BE-04](#be-04) |
+| 3 — Agendamento de consultas | Yuri | [BE-05](#be-05), [DEC-03](#dec-03) |
+| 4 — Histórico e consultas do paciente | Pierre | [BE-09](#be-09) |
+| 5 — Notificações | Yuri | [BE-06](#be-06), [DIST-01](#dist-01) |
+| 6 — Aplicativo mobile | — (front: Victor) | [FE-01M](#fe-01m), [FE-03](#fe-03) |
+
+Os demais cartões (base, banco, contrato, painel, integração, testes, documentação e apresentação) atendem todos os módulos.
+
 ## Cronograma proposto
 
 | Período | Foco | Cartões com prazo no período |
@@ -55,34 +70,35 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 | Antes de 16/11 | Decisão dos clientes. | DEC-01 (15/11) |
 | Semana 1 (16–22/11) | Fechar decisões, requisitos, modelo e contrato; merge do PR #2; banco de produção; base do backend, do painel e do app; autenticação. | DOC-02 (16/11), DEC-02 (18/11), DEC-03 (18/11), REQ-01 (18/11), DB-01 (18/11), DB-04 (19/11), BE-04 (19/11), DB-02 (20/11), DB-03 (20/11), API-01 (20/11), BE-01 (20/11), FE-01W (20/11), BE-02 (22/11), FE-01M (22/11) |
 | Semana 2 (23–29/11) | Médicos, agendamentos e publicação do backend; autenticação nos clientes. | BE-03 (25/11), FE-02 (25/11), BE-05 (28/11), BE-08 (29/11) |
-| Semana 3 (30/11–06/12) | Notificações e conceito distribuído; telas do paciente e do administrador; testes, integração, aceite e documentação final. | BE-06 (02/12), DIST-01 (02/12), FE-03 (02/12), FE-04 (02/12), BE-07 (03/12), FE-05 (04/12), FE-06 (04/12), INT-01 (04/12), QA-01 (05/12), DOC-01 (06/12) |
+| Semana 3 (30/11–06/12) | Notificações e conceito distribuído; telas do paciente e do administrador; testes, integração, aceite e documentação final. | BE-09 (01/12), BE-06 (02/12), DIST-01 (02/12), FE-03 (02/12), FE-04 (02/12), BE-07 (03/12), FE-05 (04/12), FE-06 (04/12), INT-01 (04/12), QA-01 (05/12), DOC-01 (06/12) |
 | Entrega (07/12) | Ensaio, apresentação e envio no AVA até 23:59. | APR-01 (07/12) |
 
 ## Resumo
 
 | ID | Título | Lista | Responsável | Prazo |
 |---|---|---|---|---|
-| [BE-05](#be-05) | Implementar agendamentos | Backlog | Pierre | 28/11 |
-| [BE-06](#be-06) | Implementar notificações | Backlog | Yuri e Pierre | 02/12 |
-| [DIST-01](#dist-01) | Aplicar o conceito distribuído: notificações assíncronas | Backlog | Backend a definir (Luís documenta) | 02/12 |
+| [BE-05](#be-05) | Implementar agendamentos | Backlog | Yuri (módulo 3; divisão a confirmar no DEC-02) | 28/11 |
+| [BE-09](#be-09) | Implementar o histórico e as listas de consultas | Backlog | Pierre (módulo 4; divisão a confirmar no DEC-02) | 01/12 |
+| [BE-06](#be-06) | Implementar notificações | Backlog | Yuri (módulo 5; divisão a confirmar no DEC-02) | 02/12 |
+| [DIST-01](#dist-01) | Aplicar o conceito distribuído: notificações assíncronas | Backlog | Yuri, junto com as notificações (Luís documenta) | 02/12 |
 | [BE-07](#be-07) | Testar concorrência e regras críticas | Backlog | Yuri e Pierre (revisor: Luís) | 03/12 |
 | [BE-08](#be-08) | Publicar o backend com HTTPS | Backlog | A definir | 29/11 |
-| [FE-01M](#fe-01m) | Criar a base do app React + Capacitor | Backlog | A definir | 22/11 |
-| [FE-03](#fe-03) | Implementar a área do paciente no app | Backlog | Responsável do app (a definir) | 02/12 |
+| [FE-01M](#fe-01m) | Criar a base do app React + Capacitor | Backlog | Victor | 22/11 |
+| [FE-03](#fe-03) | Implementar a área do paciente no app | Backlog | Victor | 02/12 |
 | [FE-04](#fe-04) | Implementar a área administrativa no painel web | Backlog | Victor | 02/12 |
-| [FE-05](#fe-05) | Tratar carregamento, lista vazia e erros no painel e no app | Backlog | Victor e responsável do app | 04/12 |
-| [FE-06](#fe-06) | Validar responsividade e acessibilidade básica | Backlog | Victor e responsável do app (revisor: Luís) | 04/12 |
+| [FE-05](#fe-05) | Tratar carregamento, lista vazia e erros no painel e no app | Backlog | Victor | 04/12 |
+| [FE-06](#fe-06) | Validar responsividade e acessibilidade básica | Backlog | Victor (revisor: Luís) | 04/12 |
 | [QA-01](#qa-01) | Executar o roteiro de aceite da versão 1 | Backlog | Todos | 05/12 |
 | [DOC-01](#doc-01) | Atualizar a documentação final | Backlog | Luís (apoio: todos) | 06/12 |
 | [APR-01](#apr-01) | Preparar a apresentação e as respostas técnicas individuais | Backlog | Todos (coordenação: Luís) | 07/12 |
-| [BE-03](#be-03) | Implementar o cadastro de médicos | Pronto para iniciar | Yuri | 25/11 |
+| [BE-03](#be-03) | Implementar o cadastro de médicos | Pronto para iniciar | Yuri (ele se atribuiu no Trello em 27/10; divisão a confirmar no DEC-02) | 25/11 |
 | [DOC-02](#doc-02) | Migrar a documentação do Drive para o repositório agendamentos-sa-docs | Em andamento | Luís | 16/11 |
 | [DB-02](#db-02) | Validar as migrações V1 e V2 no PostgreSQL | Em andamento | Luís (apoio: Yuri ou Pierre) | 20/11 |
 | [DB-04](#db-04) | Criar o banco de produção na nuvem | Em andamento | Luís | 19/11 |
 | [BE-01](#be-01) | Completar a base do backend e o ambiente local | Em andamento | Yuri e Pierre | 20/11 |
 | [BE-02](#be-02) | Implementar autenticação, cadastro e perfil do usuário | Em andamento | Yuri | 22/11 |
 | [FE-01W](#fe-01w) | Estruturar a base do painel web administrativo | Em andamento | Victor | 20/11 |
-| [FE-02](#fe-02) | Implementar autenticação no painel e no app | Em andamento | Victor (painel) e responsável do app | 25/11 |
+| [FE-02](#fe-02) | Implementar autenticação no painel e no app | Em andamento | Victor | 25/11 |
 | [INT-01](#int-01) | Integrar painel e app com o backend pelo contrato v1 | Em andamento | Victor, Yuri e Pierre (coordenação: Luís) | 04/12 |
 | [DEC-02](#dec-02) | Aprovar as decisões técnicas da versão 1 | Em revisão | Todos (Luís registra) | 18/11 |
 | [DEC-03](#dec-03) | Definir as regras de cancelamento e reagendamento | Em revisão | Todos (Luís registra) | 18/11 |
@@ -108,7 +124,7 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 | RN-009 | BE-02, BE-05, FE-03 |
 | RN-010 | DB-01, BE-05 |
 | RN-011 | BE-03, BE-07 |
-| RN-012 | DEC-03, DB-01, BE-05 |
+| RN-012 | DEC-03, DB-01, BE-05, BE-09 |
 | RN-013 | DB-01, BE-05 |
 | RN-014 | BE-05 |
 | RF-001 | BE-02, FE-02 |
@@ -127,13 +143,13 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 | RF-014 | BE-05, FE-03 |
 | RF-015 | DEC-03, BE-05, FE-03 |
 | RF-016 | DEC-03, BE-05, FE-03 |
-| RF-017 | BE-05, FE-04 |
+| RF-017 | BE-09, FE-04 |
 | RF-018 | DEC-03, BE-05, FE-04 |
-| RF-019 | BE-05, FE-03 |
-| RF-020 | BE-05, FE-03 |
-| RF-021 | BE-05, FE-03 |
-| RF-022 | BE-05, FE-04 |
-| RF-023 | BE-05, FE-04 |
+| RF-019 | BE-05, BE-09, FE-03 |
+| RF-020 | BE-09, FE-03 |
+| RF-021 | BE-09, FE-03 |
+| RF-022 | BE-09, FE-04 |
+| RF-023 | BE-09, FE-04 |
 | RF-024 | DEC-02, BE-06, DIST-01 |
 | RF-025 | DEC-02, BE-06, DIST-01 |
 | RF-026 | DEC-02, BE-06, DIST-01 |
@@ -167,24 +183,24 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 #### BE-05 — Implementar agendamentos
 
-**Lista:** Backlog · **Responsável:** Pierre · **Etiquetas:** Backend, Prioridade alta · **Prazo (proposta):** 28/11
+**Lista:** Backlog · **Responsável:** Yuri (módulo 3; divisão a confirmar no DEC-02) · **Etiquetas:** Backend, Prioridade alta · **Prazo (proposta):** 28/11
 
-**Objetivo.** Paciente agenda, consulta, cancela e reagenda; administrador lista, filtra, cancela e reagenda.
+**Módulo do enunciado:** 3 — Agendamento de consultas
 
-**Contexto.** Rotas planejadas: POST e GET /agendamentos, GET /agendamentos/me, GET /agendamentos/{id}, PATCH .../reagendamento e PATCH .../cancelamento. O banco já recusa sobreposição por médico e por paciente; o serviço traduz isso em 409. As regras de contexto estão na seção “Regras que ficam na aplicação” do MODELO_DADOS.md.
+**Objetivo.** Paciente agenda, cancela e reagenda; administrador cancela e reagenda qualquer consulta.
 
-**Escopo.** Inclui: criação com lock no médico; listas do paciente e do administrador com filtros; cancelamento e reagendamento; notificação PENDENTE na mesma transação. Não inclui: pagamento, convênio ou prontuário.
+**Contexto.** Rotas planejadas: POST /agendamentos, GET /agendamentos/{id}, PATCH .../reagendamento e PATCH .../cancelamento. As listas e o histórico ficam no BE-09. O banco já recusa sobreposição por médico e por paciente; o serviço traduz isso em 409. As regras de contexto estão na seção “Regras que ficam na aplicação” do MODELO_DADOS.md.
 
-**Requisitos atendidos:** RN-002, RN-004 a RN-010, RN-012 a RN-014, RF-013 a RF-023, RNF-012  
+**Escopo.** Inclui: criação com lock no médico; cancelamento e reagendamento; notificação PENDENTE na mesma transação. Não inclui: listas e histórico (BE-09); pagamento, convênio ou prontuário.
+
+**Requisitos atendidos:** RN-002, RN-004 a RN-010, RN-012 a RN-014, RF-013 a RF-016, RF-018, RF-019, RNF-012  
 **Dependências:** BE-02, BE-03, BE-04, DEC-03
 
 **Tarefas**
 
-- [ ] Entidade Agendamento e repositório
+- [ ] Entidade Agendamento e repositório (o BE-09 usa a mesma)
 - [ ] POST /agendamentos: lock no médico, janela ativa, sem bloqueio, início futuro e duração da janela
 - [ ] Traduzir exclusion_violation em 409
-- [ ] GET /agendamentos/me com filtro de status (próximos e histórico)
-- [ ] GET /agendamentos para ADMINISTRADOR com filtros de período, médico, paciente e status
 - [ ] GET /agendamentos/{id} só para o dono ou ADMINISTRADOR
 - [ ] PATCH cancelamento: status CANCELADA, cancelado_em, cancelado_por_id e motivo conforme DEC-03
 - [ ] PATCH reagendamento: novo intervalo validado na mesma transação
@@ -201,11 +217,48 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 **Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [api/openapi.yaml](../api/openapi.yaml)
 
+<a id="be-09"></a>
+
+#### BE-09 — Implementar o histórico e as listas de consultas
+
+**Lista:** Backlog · **Responsável:** Pierre (módulo 4; divisão a confirmar no DEC-02) · **Etiquetas:** Backend · **Prazo (proposta):** 01/12
+
+**Módulo do enunciado:** 4 — Histórico e consultas do paciente
+
+**Objetivo.** Paciente vê as próximas consultas e o histórico com o status de cada uma; administrador consulta e filtra as consultas de todos.
+
+**Contexto.** Módulo 4 do enunciado (Histórico e consultas do paciente). Não precisa de tabela nova: tudo sai da tabela agendamento, que guarda o status (AGENDADA, CANCELADA, CONCLUIDA) e nunca apaga consulta. O índice ix_agendamento_paciente_inicio já atende a lista do paciente. Hoje nenhuma rota marca a consulta como CONCLUIDA; isso depende do DEC-02 (perfil Médico).
+
+**Escopo.** Inclui: GET /agendamentos/me com próximas e histórico; GET /agendamentos do administrador com filtros; histórico de um paciente para o administrador; paginação. Não inclui: criar, cancelar ou reagendar (BE-05); prontuário ou dados clínicos.
+
+**Requisitos atendidos:** RN-012, RF-017, RF-019 a RF-023  
+**Dependências:** BE-05 (entidade Agendamento)
+
+**Tarefas**
+
+- [ ] Usar a entidade Agendamento do BE-05 (combinar com o Yuri)
+- [ ] GET /agendamentos/me: próximas (AGENDADA e futuras) e histórico (passadas, canceladas e concluídas), paginado
+- [ ] GET /agendamentos para ADMINISTRADOR com filtros de período, médico, paciente e status
+- [ ] Histórico de um paciente para o ADMINISTRADOR (filtro por paciente)
+- [ ] Definir como a consulta vira CONCLUIDA: médico marca, administrador marca ou automático depois do horário (DEC-02)
+- [ ] Testes: paciente só vê as próprias consultas; filtros combinados
+- [ ] Atualizar x-status no openapi.yaml
+
+**Critérios de aceite**
+
+- [ ] Consulta cancelada aparece no histórico com o status CANCELADA
+- [ ] Paciente não vê consulta de outro paciente
+- [ ] Filtros de período, médico e status funcionam juntos
+
+**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [api/openapi.yaml](../api/openapi.yaml)
+
 <a id="be-06"></a>
 
 #### BE-06 — Implementar notificações
 
-**Lista:** Backlog · **Responsável:** Yuri e Pierre · **Etiquetas:** Backend · **Prazo (proposta):** 02/12
+**Lista:** Backlog · **Responsável:** Yuri (módulo 5; divisão a confirmar no DEC-02) · **Etiquetas:** Backend · **Prazo (proposta):** 02/12
+
+**Módulo do enunciado:** 5 — Notificações
 
 **Objetivo.** Paciente recebe e lista confirmações, lembretes, cancelamentos e alterações.
 
@@ -239,7 +292,9 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 #### DIST-01 — Aplicar o conceito distribuído: notificações assíncronas
 
-**Lista:** Backlog · **Responsável:** Backend a definir (Luís documenta) · **Etiquetas:** Backend, Banco de dados, Sistemas distribuídos, Prioridade alta · **Prazo (proposta):** 02/12
+**Lista:** Backlog · **Responsável:** Yuri, junto com as notificações (Luís documenta) · **Etiquetas:** Backend, Banco de dados, Sistemas distribuídos, Prioridade alta · **Prazo (proposta):** 02/12
+
+**Módulo do enunciado:** 5 — Notificações
 
 **Objetivo.** Aplicar e justificar pelo menos um conceito de sistemas distribuídos, como a SA pede.
 
@@ -252,7 +307,7 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 **Tarefas**
 
-- [ ] Definir o responsável no backend
+- [ ] Confirmar o dono junto com a divisão do backend (DEC-02)
 - [ ] Processo separado (@Scheduled ou consumidor) que lê PENDENTE com FOR UPDATE SKIP LOCKED
 - [ ] Marcar ENVIADA com enviada_em, ou FALHA somando tentativas
 - [ ] Limite de tentativas e reenvio das que falharam
@@ -321,7 +376,8 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 **Tarefas**
 
-- [ ] Decidir onde publicar — a confirmar (o grupo já usa AWS no FileMind; há opções gratuitas mais simples)
+- [ ] Decidir com o grupo se a API será publicada e quem publica (DEC-02); o enunciado fala em backend hospedado em nuvem
+- [ ] Decidir onde publicar: serviço que rode Java/Docker, como Render, Railway ou uma EC2 (a Vercel serve para o painel, não para a API)
 - [ ] Criar o Dockerfile do backend
 - [ ] Configurar DB_* e o segredo do JWT no provedor, fora do Git
 - [ ] Ativar HTTPS e liberar no CORS o painel e o app
@@ -339,11 +395,13 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 #### FE-01M — Criar a base do app React + Capacitor
 
-**Lista:** Backlog · **Responsável:** A definir · **Etiquetas:** Mobile, Frontend, Prioridade alta · **Prazo (proposta):** 22/11
+**Lista:** Backlog · **Responsável:** Victor · **Etiquetas:** Mobile, Frontend, Prioridade alta · **Prazo (proposta):** 22/11
+
+**Módulo do enunciado:** 6 — Aplicativo mobile
 
 **Objetivo.** Ter o app do paciente gerando APK, com a estrutura de telas e o cliente da API.
 
-**Contexto.** A arquitetura do app (pastas pages, services, contexts, hooks, routes e capacitor.config) está em arquitetura/ARQUITETURA.md, em duas versões: JSX e TSX. Ainda não há repositório nem responsável.
+**Contexto.** A arquitetura do app (pastas pages, services, contexts, hooks, routes e capacitor.config) está em arquitetura/ARQUITETURA.md, em duas versões: JSX e TSX. O Victor faz o front de todos os módulos (16/11). A separação em dois repositórios veio do ChatGPT do projeto do Yuri, não do professor; o provável é um projeto só (frontend-agendamento), com o Capacitor gerando o APK do mesmo código React (a confirmar com o Victor).
 
 **Escopo.** Inclui: projeto React + Vite + Capacitor com Android; rotas das telas do paciente; cliente HTTP com JWT; tratamento de falha de rede. Não inclui: iOS; publicação na Play Store.
 
@@ -352,9 +410,10 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 **Tarefas**
 
-- [ ] Definir o responsável
-- [ ] Criar o repositório do app — nome a confirmar (ex.: agendamentos-sa-app)
-- [ ] Projeto Vite + React + Capacitor com a plataforma Android
+- [x] Definir o responsável: Victor, que faz o front de todos os módulos (16/11)
+- [ ] Confirmar painel e app no mesmo projeto (frontend-agendamento) — a confirmar com o Victor
+- [ ] Adicionar o Capacitor com a plataforma Android ao projeto React
+- [ ] Separar as telas por perfil: paciente no app, administrador no painel
 - [ ] Gerar e instalar um APK de teste num Android 8.0 ou superior
 - [ ] Rotas: login, cadastro, início, médicos, horários, agendar, minhas consultas, histórico e perfil
 - [ ] Cliente HTTP central com URL da API configurável e token JWT
@@ -372,7 +431,9 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 #### FE-03 — Implementar a área do paciente no app
 
-**Lista:** Backlog · **Responsável:** Responsável do app (a definir) · **Etiquetas:** Mobile, Frontend · **Prazo (proposta):** 02/12
+**Lista:** Backlog · **Responsável:** Victor · **Etiquetas:** Mobile, Frontend · **Prazo (proposta):** 02/12
+
+**Módulo do enunciado:** 6 — Aplicativo mobile
 
 **Objetivo.** Paciente faz pelo celular tudo o que os requisitos pedem: agendar, acompanhar, cancelar e reagendar.
 
@@ -437,7 +498,7 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 #### FE-05 — Tratar carregamento, lista vazia e erros no painel e no app
 
-**Lista:** Backlog · **Responsável:** Victor e responsável do app · **Etiquetas:** Frontend, Mobile, Testes · **Prazo (proposta):** 04/12
+**Lista:** Backlog · **Responsável:** Victor · **Etiquetas:** Frontend, Mobile, Testes · **Prazo (proposta):** 04/12
 
 **Objetivo.** Nenhuma tela fica travada ou em branco quando a API demora, devolve erro ou cai.
 
@@ -468,7 +529,7 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 #### FE-06 — Validar responsividade e acessibilidade básica
 
-**Lista:** Backlog · **Responsável:** Victor e responsável do app (revisor: Luís) · **Etiquetas:** Frontend, Mobile, Testes · **Prazo (proposta):** 04/12
+**Lista:** Backlog · **Responsável:** Victor (revisor: Luís) · **Etiquetas:** Frontend, Mobile, Testes · **Prazo (proposta):** 04/12
 
 **Objetivo.** Painel e app usáveis nos tamanhos de tela previstos e com o básico de acessibilidade.
 
@@ -583,7 +644,7 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 - [ ] Yuri prepara: autenticação, JWT, usuários e médicos
 - [ ] Pierre prepara: agenda, horários disponíveis, agendamentos e lock
 - [ ] Victor prepara: painel, integração e tratamento de erros
-- [ ] Responsável do app prepara: Capacitor, APK e consumo da API
+- [ ] Victor prepara: Capacitor, APK e consumo da API
 - [ ] Ensaio com cronômetro
 - [ ] Plano B: vídeo da demonstração e backend local com dados de demonstração
 - [ ] Conferir o que o envio no AVA pede e enviar uma única vez até 07/12 às 23:59
@@ -601,13 +662,15 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 #### BE-03 — Implementar o cadastro de médicos
 
-**Lista:** Pronto para iniciar · **Responsável:** Yuri · **Etiquetas:** Backend · **Prazo (proposta):** 25/11
+**Lista:** Pronto para iniciar · **Responsável:** Yuri (ele se atribuiu no Trello em 27/10; divisão a confirmar no DEC-02) · **Etiquetas:** Backend · **Prazo (proposta):** 25/11
+
+**Módulo do enunciado:** 2 — Agenda de profissionais
 
 **Objetivo.** Administrador cadastra, edita, lista e desativa médicos; paciente lista para escolher.
 
 **Contexto.** A entidade Medico e o MedicoRepository (com lock pessimista) chegaram no PR #2; o CRUD ainda não existe. Rotas planejadas: GET e POST /medicos, GET e PATCH /medicos/{id}.
 
-**Escopo.** Inclui: listagem paginada com os filtros do contrato; cadastro; edição; desativação lógica. Não inclui: login de médico (perfil MEDICO reservado).
+**Escopo.** Inclui: listagem paginada com os filtros do contrato; cadastro; edição; desativação lógica. Não inclui: login de médico (depende do DEC-02).
 
 **Requisitos atendidos:** RN-003, RN-011, RF-007  
 **Dependências:** BE-04 (merge do PR #2), BE-02
@@ -778,6 +841,8 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 **Lista:** Em andamento · **Responsável:** Yuri · **Etiquetas:** Backend, Prioridade alta · **Prazo (proposta):** 22/11
 
+**Módulo do enunciado:** 1 — Cadastro e autenticação
+
 **Objetivo.** Login com token e autorização por perfil, para os clientes deixarem de usar o login padrão do Spring Security.
 
 **Contexto.** Na master já existem o CRUD /api/v1/usuarios (criar, listar paginado, buscar, atualizar e desativar), senha com BCrypt e validação de senha. O painel hoje autentica pelo formulário padrão /login do Spring Security, com CSRF.
@@ -846,7 +911,9 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 #### FE-02 — Implementar autenticação no painel e no app
 
-**Lista:** Em andamento · **Responsável:** Victor (painel) e responsável do app · **Etiquetas:** Frontend, Mobile · **Prazo (proposta):** 25/11
+**Lista:** Em andamento · **Responsável:** Victor · **Etiquetas:** Frontend, Mobile · **Prazo (proposta):** 25/11
+
+**Módulo do enunciado:** 1 — Cadastro e autenticação
 
 **Objetivo.** Login, cadastro e logout funcionando com JWT nos dois clientes, cada um só para o seu perfil.
 
@@ -918,9 +985,9 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 **Objetivo.** Fechar as decisões técnicas que ainda são proposta, para backend e clientes pararem de depender delas.
 
-**Contexto.** Quatro itens já estão decididos (PostgreSQL, clínica única, médico sem login, especialidade como atributo). Duração da consulta, canal de notificação e lembrete têm proposta na modelagem. Sem eles, BE-04, BE-05 e BE-06 não fecham regra.
+**Contexto.** Três itens já estão decididos (PostgreSQL, clínica única, especialidade como atributo). Duração da consulta, canal de notificação e lembrete têm proposta na modelagem. Sem eles, BE-04, BE-05 e BE-06 não fecham regra. Ficam em aberto, sem proposta: os perfis Médico e Recepcionista, a divisão do backend por módulo e a publicação da API. O enunciado não define perfis; o documento de requisitos do grupo cita só Paciente e Administrador, e a V2 do Yuri criou MEDICO e RECEPCIONISTA.
 
-**Escopo.** Inclui: duração da consulta; canal e momento das notificações; perfis MEDICO e RECEPCIONISTA (criados pela V2) como reservados. Não inclui: regras de cancelamento e reagendamento (DEC-03).
+**Escopo.** Inclui: duração da consulta; canal e momento das notificações; perfis Médico e Recepcionista (criados pela V2); divisão do backend por módulo; publicação da API (BE-08). Não inclui: regras de cancelamento e reagendamento (DEC-03).
 
 **Requisitos atendidos:** RN-005, RF-024 a RF-028, RNF-011  
 **Dependências:** —
@@ -929,18 +996,21 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 - [x] Confirmar PostgreSQL como banco
 - [x] Confirmar clínica única, sem tabela de unidade
-- [x] Confirmar médico sem login na v1
 - [x] Confirmar especialidade como atributo do médico
 - [ ] Aprovar duração de 30 minutos, configurável por janela (proposta)
 - [ ] Aprovar canal SISTEMA na v1; EMAIL só se sobrar tempo (proposta)
 - [ ] Aprovar lembrete 24 horas antes da consulta (proposta)
-- [ ] Aprovar MEDICO e RECEPCIONISTA como perfis reservados, sem funcionalidade na v1 (proposta)
+- [ ] Decidir se Médico e Recepcionista ganham telas na v1 ou ficam para depois
+- [ ] Se o médico entrar: V3 com medico.usuario_id (Luís), rotas de minha agenda e de concluir consulta (backend) e telas (Victor)
+- [ ] Se o recepcionista entrar: permissões para cadastrar paciente e agendar ou cancelar por ele (backend) e telas (Victor); o banco já guarda quem agendou (criado_por_id)
+- [ ] Confirmar a divisão do backend: ímpares com o Yuri (1, 3, 5) e pares com o Pierre (2, 4); o Yuri se atribuiu ao cadastro de médicos (módulo 2) em 27/10
+- [ ] Decidir se a API será publicada na nuvem e quem publica (BE-08)
 - [ ] Registrar o resultado na seção “Decisões da versão 1” do MODELO_DADOS.md
 
 **Critérios de aceite**
 
 - [ ] Nenhum item da tabela “Decisões da versão 1” continua como proposta
-- [ ] Backend (Yuri e Pierre) e clientes (Victor e responsável do app) deram OK no grupo
+- [ ] Backend (Yuri e Pierre) e clientes (Victor) deram OK no grupo
 - [ ] BE-04, BE-05 e BE-06 citam a duração e o canal decididos
 
 **Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md)
@@ -950,6 +1020,8 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 #### DEC-03 — Definir as regras de cancelamento e reagendamento
 
 **Lista:** Em revisão · **Responsável:** Todos (Luís registra) · **Etiquetas:** Decisão da equipe, Contrato API · **Prazo (proposta):** 18/11
+
+**Módulo do enunciado:** 3 — Agendamento de consultas
 
 **Objetivo.** Definir quem pode cancelar ou reagendar, até quando e com quais dados.
 
@@ -987,7 +1059,7 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 **Contexto.** O documento saiu do Google Drive e agora fica em requisitos/REQUISITOS.md. Os ajustes já estão aplicados lá; os itens marcados como proposta precisam do OK do grupo.
 
-**Escopo.** Inclui: RN-003 sem “unidades de saúde”; RNF-007 citando React + Capacitor; RNF-016 com Android 8.0 ou superior (proposta); RF-004 fora da v1 (proposta); RNF-019 novo, notificações assíncronas (proposta); notas: perfis reservados, canal SISTEMA, HTTPS só no ambiente publicado. Não inclui: novos requisitos funcionais.
+**Escopo.** Inclui: RN-003 sem “unidades de saúde”; RNF-007 citando React + Capacitor; RNF-016 com Android 8.0 ou superior (proposta); RF-004 fora da v1 (proposta); RNF-019 novo, notificações assíncronas (proposta); notas: perfis Médico e Recepcionista (dependem do DEC-02), canal SISTEMA, HTTPS só no ambiente publicado. Não inclui: novos requisitos funcionais.
 
 **Requisitos atendidos:** RN-003, RF-004, RNF-001, RNF-007, RNF-016, RNF-019  
 **Dependências:** DEC-01, DEC-02
@@ -1115,6 +1187,8 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 **Lista:** Em revisão · **Responsável:** Pierre · **Etiquetas:** Backend · **Prazo (proposta):** 19/11
 
+**Módulo do enunciado:** 2 — Agenda de profissionais
+
 **Objetivo.** Administrador define a agenda semanal e os bloqueios; qualquer usuário consulta os horários livres.
 
 **Contexto.** PR #2 aberto desde 02/11 com GET e PUT /medicos/{id}/agenda, GET, POST e DELETE de bloqueios e GET horarios-disponiveis, usando lock no médico. A revisão de banco não achou problema de mapeamento; há três ajustes pequenos antes do merge.
@@ -1153,7 +1227,7 @@ Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as
 
 **Objetivo.** Registrar quais aplicações o grupo entrega na SA.
 
-**Contexto.** Em 27/10 o escopo era só web responsivo. Em 15/11 o grupo decidiu: painel web para o administrador e app React + Capacitor (Android) para o paciente, com o mesmo backend e o mesmo contrato. A SA é compartilhada entre Web, Mobile e Distribuídos, e o app cobre a parte de Mobile.
+**Contexto.** Em 27/10 o escopo era só web responsivo. Em 15/11 o grupo decidiu: painel web para o administrador e app React + Capacitor (Android) para o paciente, com o mesmo backend e o mesmo contrato. A SA vale para Web, Móveis e Distribuídos, e o tema do enunciado é o aplicativo mobile. Cada grupo faz o sistema inteiro: o professor descartou a divisão do PDF em uma equipe por módulo, e dentro do grupo o Victor faz o front de todos os módulos.
 
 **Escopo.** Inclui: painel web administrativo (React + Vite); app do paciente (React + Capacitor, Android); um backend e um contrato para os dois. Não inclui: app iOS; app nativo em Kotlin, Flutter ou React Native.
 

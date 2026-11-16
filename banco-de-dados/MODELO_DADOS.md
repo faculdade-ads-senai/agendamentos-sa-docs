@@ -7,7 +7,7 @@ Situação: a migração V1 está no backend (`src/main/resources/db/migration`)
 ## Mudanças desde a versão 1
 
 - Clientes: painel web (React + Vite) e aplicativo React + Capacitor (Android), conforme decisão do grupo de 15/11. O banco não muda com isso: os dois clientes usam a mesma API e nenhum acessa o banco direto.
-- Perfis: a V2 trocou `ADMIN` por `ADMINISTRADOR` e passou a aceitar `MEDICO` e `RECEPCIONISTA`. Na versão 1 do sistema esses dois ficam reservados (ver "Perfis").
+- Perfis: a V2 trocou `ADMIN` por `ADMINISTRADOR` e passou a aceitar `MEDICO` e `RECEPCIONISTA`. Se esses dois ganham telas na versão 1 está em decisão no grupo (DEC-02; ver "Perfis").
 - Datas de criação e atualização: confirmado que o PostgreSQL cuida delas (padrão `CURRENT_TIMESTAMP` e gatilho). O Hibernate só lê (`@Generated`), como já está nas entidades.
 - Novos materiais: script de validação das restrições ([validacao_restricoes.sql](validacao_restricoes.sql)) e dados de demonstração para desenvolvimento (`R__dados_demonstracao.sql` no backend, perfil `dev`).
 - Decisões pendentes da versão 1 agora têm proposta (ver o fim do documento).
@@ -20,8 +20,8 @@ Situação: a migração V1 está no backend (`src/main/resources/db/migration`)
 | Migrações | Flyway, `ddl-auto=validate` | O banco é definido pelas migrações; o Hibernate só confere se as entidades batem com ele. |
 | Clientes | Painel web e app React + Capacitor | Os dois consomem a mesma API REST. |
 | Perfis com uso na v1 | `ADMINISTRADOR` e `PACIENTE` | São os perfis citados nos requisitos funcionais. |
-| Perfis reservados | `MEDICO` e `RECEPCIONISTA` | Aceitos pela V2, sem permissões próprias na v1. |
-| Médico | Entidade sem login | Gerenciado pelo administrador. Não há vínculo entre `medico` e `usuario`. |
+| Perfis `MEDICO` e `RECEPCIONISTA` | Aceitos pela V2; uso em decisão (DEC-02) | Médico com login exige a migração descrita em "Perfis"; recepcionista não muda o banco (`criado_por_id` já registra quem agendou). |
+| Médico | Entidade sem login, até o DEC-02 | Gerenciado pelo administrador. Hoje não há vínculo entre `medico` e `usuario`. |
 | Especialidade | Atributo de médico | Evita CRUD e tabela adicionais antes de existir necessidade real. |
 | Unidade de saúde | Fora da versão 1 | Uma única clínica (arquitetura do backend: "apenas um consultório"). |
 | Histórico | Derivado de `agendamento` | Cancelados e concluídos permanecem na mesma tabela. Não há prontuário. |
@@ -146,8 +146,8 @@ erDiagram
 |---|---|
 | `ADMINISTRADOR` | Gerencia médicos, agendas, bloqueios, pacientes e qualquer agendamento. |
 | `PACIENTE` | Cadastra-se, agenda, cancela e reagenda as próprias consultas e vê o próprio histórico. |
-| `MEDICO` | Reservado. Não tem permissões próprias e não está ligado à tabela `medico`. |
-| `RECEPCIONISTA` | Reservado. Não tem permissões próprias. |
+| `MEDICO` | Em decisão (DEC-02). Hoje não tem permissões próprias e não está ligado à tabela `medico`. Se entrar: vê a própria agenda e conclui a consulta. |
+| `RECEPCIONISTA` | Em decisão (DEC-02). Hoje não tem permissões próprias. Se entrar: cadastra paciente e agenda ou cancela por ele. |
 
 Se o médico passar a entrar no sistema (por exemplo, para ver a própria agenda), será preciso uma nova migração com `medico.usuario_id` (único, opcional, referência a `usuario`) e as regras de acesso correspondentes. Até lá, um usuário com perfil `MEDICO` ou `RECEPCIONISTA` não deve receber acesso além do de um usuário autenticado sem perfil administrativo.
 
@@ -223,7 +223,7 @@ As validações abaixo dependem de contexto e devem rodar numa transação no ba
 |---|---|
 | PostgreSQL como banco definitivo | Decidido |
 | Clínica única, sem tabela de unidade | Decidido |
-| Médico sem login na v1 | Decidido; `MEDICO` fica reservado |
+| Perfis `MEDICO` e `RECEPCIONISTA` com telas na v1 | Em aberto (DEC-02) |
 | Especialidade como atributo de médico | Decidido |
 | Duração inicial das consultas | Proposta: 30 minutos, configurável por janela |
 | Notificações | Proposta: canal `SISTEMA` (lista no app) na v1; `EMAIL` só se sobrar tempo |

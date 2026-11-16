@@ -23,8 +23,7 @@ Este repositório substitui a pasta do Google Drive. Requisitos, arquitetura, ba
 | Repositório | Conteúdo |
 |---|---|
 | `yuriOdsz/agendamentos-sa` | Backend Spring Boot e migrações do banco |
-| `VictorKLing/frontend-agendamento` | Painel web do administrador (React + Vite) |
-| a criar | App do paciente (React + Capacitor) |
+| `VictorKLing/frontend-agendamento` | Painel web (React + Vite) e, provavelmente, o app do paciente: o Capacitor gera o APK do mesmo projeto React (a confirmar com o Victor) |
 | `agendamentos-sa-docs` | Esta documentação |
 
 ## Decisões a confirmar pelo grupo
@@ -37,9 +36,19 @@ O resto da documentação descreve o que já foi decidido ou já está no códig
 4. Recuperação de senha (RF-004) fora da versão 1.
 5. App para Android 8.0 ou superior.
 6. Notificações assíncronas (RNF-019) como o conceito de sistemas distribuídos da SA.
-7. Perfis `MEDICO` e `RECEPCIONISTA` reservados, sem funcionalidades na versão 1.
 
 Quem discordar abre uma issue ou fala no grupo; sem objeção, valem como decididos.
+
+Em aberto, sem proposta (precisa de resposta do grupo):
+
+- Perfis `MEDICO` e `RECEPCIONISTA`: ganham telas na versão 1 ou ficam para depois? Se entrarem, o médico vê a própria agenda e conclui a consulta, e o recepcionista cadastra o paciente e agenda ou cancela por ele. O médico exige uma migração nova (V3, `medico.usuario_id`) e mudanças no backend; o recepcionista só muda o backend.
+- Divisão do backend por módulo: Yuri com os módulos 1, 3 e 5 e Pierre com os módulos 2 e 4 (lembrança do Luís, a confirmar). O Yuri se atribuiu ao cadastro de médicos (módulo 2) no Trello em 27/10.
+- Publicação da API na nuvem e quem publica (o enunciado fala em backend hospedado em nuvem).
+- Painel e app no mesmo projeto React.
+
+## Módulos do sistema
+
+O enunciado divide o sistema em 6 módulos: 1 cadastro e autenticação, 2 agenda de profissionais, 3 agendamento de consultas, 4 histórico e consultas do paciente, 5 notificações e 6 aplicativo mobile. Cada equipe faz o sistema inteiro. No grupo, o Victor faz o front de todos os módulos, Yuri e Pierre dividem o backend e o Luís faz o banco de todos os módulos, o Trello e a documentação. A ligação de cada módulo com os cartões está no [backlog](organizacao/BACKLOG.md#módulos-do-enunciado).
 
 ## Como contribuir
 

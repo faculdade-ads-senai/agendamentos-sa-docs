@@ -42,7 +42,7 @@ Os requisitos funcionais definem as operações que o sistema deverá disponibil
 | RF-005 | O sistema deve permitir o encerramento da sessão do usuário. | Ambos |
 | RF-006 | O sistema deve identificar o perfil do usuário e disponibilizar as funcionalidades correspondentes. | Ambos |
 
-O banco aceita também os perfis `MEDICO` e `RECEPCIONISTA`, reservados para versões futuras. Na versão 1 só os perfis Paciente e Administrador têm funcionalidades.
+O banco aceita também os perfis `MEDICO` e `RECEPCIONISTA`. Se eles ganham funcionalidades na versão 1 está em decisão no grupo (DEC-02); até lá, só os perfis Paciente e Administrador têm funcionalidades.
 
 RF-004 **(proposta)**: o banco não guarda o código de recuperação de senha. Para manter o requisito na versão 1 é preciso uma migração com tabela de códigos (hash, validade e uso único) e envio por e-mail.
 
