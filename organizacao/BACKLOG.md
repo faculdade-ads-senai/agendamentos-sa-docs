@@ -1014,7 +1014,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 **Passos**
 
-- [x] Criar o repositório luisctorrens/agendamentos-sa-docs
+- [x] Criar o repositório agendamentos-sa-docs (hoje na organização faculdade-ads-senai)
 - [x] Converter “Trabalho SA - Desenvolvimento WEB” para requisitos/REQUISITOS.md
 - [x] Juntar os quatro arquivos de arquitetura em arquitetura/ARQUITETURA.md
 - [x] Copiar modelagem, script de validação, contrato e backlog

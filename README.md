@@ -24,7 +24,7 @@ Este repositório substitui a pasta do Google Drive. Requisitos, arquitetura, ba
 |---|---|
 | [`faculdade-ads-senai/agendamentos-sa-backend`](https://github.com/faculdade-ads-senai/agendamentos-sa-backend) | Backend Spring Boot e migrações do banco (privado; até 16/11 era `yuriOdsz/agendamentos-sa`) |
 | `VictorKLing/frontend-agendamento` | Painel web (React + Vite) e, provavelmente, o app do paciente: o Capacitor gera o APK do mesmo projeto React (a confirmar com o Victor) |
-| `agendamentos-sa-docs` | Esta documentação |
+| [`faculdade-ads-senai/agendamentos-sa-docs`](https://github.com/faculdade-ads-senai/agendamentos-sa-docs) | Esta documentação (pública; até 18/11 era `luisctorrens/agendamentos-sa-docs`) |
 
 ## Decisões da versão 1
 
