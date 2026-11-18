@@ -1,10 +1,12 @@
 # Requisitos — Agendamentos SA
 
-Versão 1.1 — 15/11/2026. Migrado do documento "Trabalho SA - Desenvolvimento WEB" (Google Drive do grupo), versão de 26/10/2026. A partir de agora este arquivo é a versão oficial; o documento do Drive não é mais atualizado.
+Versão 1.2 — 18/11/2026. Migrado do documento "Trabalho SA - Desenvolvimento WEB" (Google Drive do grupo), versão de 26/10/2026. A partir de agora este arquivo é a versão oficial; o documento do Drive não é mais atualizado.
 
-Clientes: painel web para o administrador (React + Vite) e aplicativo React + Capacitor para o paciente (Android), conforme decisão do grupo de 15/11/2026. Os dois usam a mesma API REST.
+Clientes: painel web para o administrador (React + Vite) e aplicativo React + Capacitor para o paciente (Android), conforme decisão do grupo de 15/11/2026. Os dois usam a mesma API REST. Onde fica a tela do médico está em decisão (DEC-04).
 
-Itens marcados com **(proposta)** ainda dependem da confirmação do grupo. As mudanças desde a versão do Drive estão no fim do arquivo.
+Perfis da versão 1 (decisão de 17/11/2026, DEC-02): Paciente, Médico e Administrador. O administrador faz também o papel da recepcionista. Todos entram com a conta Google.
+
+As mudanças desde a versão do Drive estão no fim do arquivo.
 
 ## 1. Regras de negócio (RN)
 
@@ -26,6 +28,9 @@ As regras de negócio determinam as condições que devem ser respeitadas durant
 | RN-012 | Agendamentos cancelados devem permanecer registrados no histórico. |
 | RN-013 | O sistema deve controlar os estados dos agendamentos conforme o fluxo definido, conforme: AGENDADA, CANCELADA e CONCLUIDA |
 | RN-014 | Uma solicitação de agendamento deve ser confirmada somente após a verificação da disponibilidade do horário. |
+| RN-015 | O paciente só pode cancelar ou reagendar a própria consulta até 24 horas antes do início. O médico (só cancelamento, nas consultas da própria agenda) e o administrador podem fazê-lo a qualquer momento antes da consulta. |
+| RN-016 | Todo cancelamento deve registrar o motivo. |
+| RN-017 | A duração das consultas é definida pelo médico em cada janela de atendimento, entre 30 e 60 minutos. |
 
 ## 2. Requisitos funcionais (RF)
 
@@ -35,16 +40,14 @@ Os requisitos funcionais definem as operações que o sistema deverá disponibil
 
 | ID | Descrição | Perfil |
 |---|---|---|
-| RF-001 | O sistema deve permitir o cadastro de novos pacientes. | Paciente |
-| RF-002 | O sistema deve permitir a autenticação por meio de credenciais. | Ambos |
+| RF-001 | O sistema deve permitir o cadastro de novos pacientes. O cadastro acontece no primeiro login com a conta Google. | Paciente |
+| RF-002 | O sistema deve permitir a autenticação por meio da conta Google. | Todos |
 | RF-003 | O sistema deve permitir que pacientes consultem e atualizem seus dados cadastrais. | Paciente |
-| RF-004 | O sistema deve permitir a recuperação de acesso à conta. **(proposta: fora da versão 1)** | Ambos |
-| RF-005 | O sistema deve permitir o encerramento da sessão do usuário. | Ambos |
-| RF-006 | O sistema deve identificar o perfil do usuário e disponibilizar as funcionalidades correspondentes. | Ambos |
+| RF-004 | O sistema deve permitir a recuperação de acesso à conta. **Fora da versão 1:** com o login pelo Google, quem recupera o acesso é o próprio Google. | Todos |
+| RF-005 | O sistema deve permitir o encerramento da sessão do usuário. | Todos |
+| RF-006 | O sistema deve identificar o perfil do usuário e disponibilizar as funcionalidades correspondentes. | Todos |
 
-O banco aceita também os perfis `MEDICO` e `RECEPCIONISTA`. Se eles ganham funcionalidades na versão 1 está em decisão no grupo (DEC-02); até lá, só os perfis Paciente e Administrador têm funcionalidades.
-
-RF-004 **(proposta)**: o banco não guarda o código de recuperação de senha. Para manter o requisito na versão 1 é preciso uma migração com tabela de códigos (hash, validade e uso único) e envio por e-mail.
+O sistema não guarda senha. Médicos e administradores são cadastrados antes, com o e-mail da conta Google; no primeiro login, o sistema reconhece a pessoa pelo e-mail. Quem entra sem cadastro vira paciente. No ambiente de desenvolvimento existe também um login de teste com e-mail e senha, só para os usuários de demonstração.
 
 ### 2.2. Gerenciamento administrativo
 
@@ -72,7 +75,7 @@ RF-004 **(proposta)**: o banco não guarda o código de recuperação de senha. 
 | RF-016 | O sistema deve permitir o reagendamento de consultas. | Paciente |
 | RF-017 | O sistema deve permitir que administradores consultem os agendamentos realizados. | Administrador |
 | RF-018 | O sistema deve permitir que administradores cancelem ou reagendem consultas. | Administrador |
-| RF-019 | O sistema deve permitir a consulta do status de cada agendamento. | Ambos |
+| RF-019 | O sistema deve permitir a consulta do status de cada agendamento. | Todos |
 
 ### 2.5. Histórico de consultas
 
@@ -85,7 +88,14 @@ RF-004 **(proposta)**: o banco não guarda o código de recuperação de senha. 
 
 O histórico conterá somente dados administrativos dos agendamentos, sem informações clínicas ou prontuários.
 
-### 2.6. Notificações
+### 2.6. Área do médico
+
+| ID | Descrição |
+|---|---|
+| RF-029 | O sistema deve permitir que médicos consultem a própria agenda e as consultas marcadas com eles. |
+| RF-030 | O sistema deve permitir que médicos cancelem consultas da própria agenda, informando o motivo. |
+
+### 2.7. Notificações
 
 | ID | Descrição |
 |---|---|
@@ -95,7 +105,7 @@ O histórico conterá somente dados administrativos dos agendamentos, sem inform
 | RF-027 | O sistema deve notificar pacientes sobre alterações nos agendamentos. |
 | RF-028 | O sistema deve manter registros das notificações enviadas. |
 
-**(proposta)** Na versão 1 as notificações usam o canal interno do sistema (listadas no aplicativo); o envio por e-mail é opcional. O lembrete é gerado 24 horas antes da consulta.
+Na versão 1 (decisão de 17/11/2026), cada notificação aparece na caixa de entrada do app e do painel e é enviada por e-mail, em segundo plano. O e-mail de confirmação e o de reagendamento levam um convite de agenda (`.ics`) para a pessoa adicionar a consulta à Google Agenda dela; o de cancelamento leva o convite de cancelamento. O lembrete é gerado 24 horas antes da consulta. Toda mudança avisa o paciente e o médico da consulta, menos quem fez a mudança. Não há notificação push no celular.
 
 ## 3. Requisitos não funcionais (RNF)
 
@@ -104,9 +114,9 @@ Os requisitos não funcionais estabelecem padrões técnicos e de qualidade espe
 | ID | Categoria | Descrição |
 |---|---|---|
 | RNF-001 | Segurança | Toda comunicação entre as interfaces e o backend publicado deve utilizar HTTPS. No desenvolvimento local, HTTP é aceito. |
-| RNF-002 | Segurança | As senhas dos usuários devem ser armazenadas utilizando algoritmos seguros de hash. |
+| RNF-002 | Segurança | O sistema não deve armazenar senhas: a autenticação é feita pela conta Google, e o backend confere o token do Google antes de emitir o próprio token de acesso. As senhas dos usuários de demonstração do ambiente de desenvolvimento usam hash BCrypt. |
 | RNF-003 | Segurança | As funcionalidades protegidas devem exigir autenticação válida. |
-| RNF-004 | Segurança | O sistema deve implementar controle de acesso baseado nos perfis de paciente e administrador. |
+| RNF-004 | Segurança | O sistema deve implementar controle de acesso baseado nos perfis de paciente, médico e administrador. |
 | RNF-005 | Desempenho | As consultas de disponibilidade devem apresentar respostas em até 3 segundos em condições normais de utilização. |
 | RNF-006 | Desempenho | O sistema deve suportar, inicialmente, pelo menos 50 usuários simultâneos sem perda de funcionalidades. |
 | RNF-007 | Usabilidade | O aplicativo mobile (React + Capacitor) deve oferecer interface adequada a diferentes tamanhos de tela de celulares. |
@@ -118,10 +128,10 @@ Os requisitos não funcionais estabelecem padrões técnicos e de qualidade espe
 | RNF-013 | Disponibilidade | O sistema deve possuir mecanismos de tratamento de falhas de comunicação com o backend. |
 | RNF-014 | Manutenibilidade | O código-fonte deve seguir uma organização modular e padrões de desenvolvimento definidos pela equipe. |
 | RNF-015 | Privacidade | O tratamento dos dados pessoais deve observar os requisitos aplicáveis da LGPD. |
-| RNF-016 | Compatibilidade | O aplicativo mobile deve funcionar em Android 8.0 (API 26) ou superior. **(proposta)** |
+| RNF-016 | Compatibilidade | O aplicativo mobile deve funcionar em Android 8.0 (API 26) ou superior. |
 | RNF-017 | Integração | As APIs devem utilizar JSON como formato padrão para troca de dados. |
 | RNF-018 | Testabilidade | As funcionalidades críticas de autenticação e agendamento devem possuir testes automatizados. |
-| RNF-019 | Arquitetura (sistemas distribuídos) | As notificações devem ser registradas na mesma transação da operação que as origina e enviadas por um processo assíncrono, sem bloquear o agendamento, com registro de tentativas e reenvio em caso de falha. **(proposta)** |
+| RNF-019 | Arquitetura (sistemas distribuídos) | As notificações devem ser registradas na mesma transação da operação que as origina e enviadas por um processo assíncrono, sem bloquear o agendamento, com registro de tentativas e reenvio em caso de falha. |
 
 Observação: Os valores de desempenho, concorrência e compatibilidade são metas sugeridas. Eles precisam ser validados pela equipe e acompanhados de condições de teste antes de serem considerados requisitos definitivos.
 
@@ -132,10 +142,14 @@ O RNF-019 atende ao item da SA que pede pelo menos um conceito de sistemas distr
 | ID | Mudança | Motivo |
 |---|---|---|
 | RN-003 | Sai "e unidades de saúde". | Clínica única: não existe cadastro de unidades na versão 1. |
-| RF-004 | Proposta de tirar da versão 1. | O banco não guarda código de recuperação de senha. |
-| 2.1 | Nota sobre os perfis reservados `MEDICO` e `RECEPCIONISTA`. | A migração V2 passou a aceitar esses perfis. |
-| 2.6 | Proposta de canal interno e lembrete 24 horas antes. | Define o que a versão 1 entrega. |
+| RF-004 | Fora da versão 1 (18/11). | O login é pelo Google, que cuida da recuperação de acesso. |
+| RF-001, RF-002 | Cadastro e login pela conta Google (18/11). | Decisão do grupo de 17/11 (DEC-02). |
+| RN-015, RN-016, RN-017 | Novas (18/11): prazo de 24 horas para o paciente cancelar ou reagendar, motivo obrigatório no cancelamento e duração de 30 a 60 minutos. | Decisões do grupo de 17/11 (DEC-02 e DEC-03). |
+| 2.6 | Nova seção, Área do médico, com RF-029 e RF-030 (18/11). | O médico entra no sistema na versão 1 (DEC-02). |
+| 2.7 | Caixa de entrada mais e-mail com convite de agenda; lembrete 24 horas antes (18/11). | Decisão do grupo de 17/11 (DEC-02). |
+| RNF-002 | O sistema não guarda senha (18/11). | Login pelo Google. |
+| RNF-004 | Inclui o perfil médico (18/11). | O médico entra no sistema na versão 1. |
 | RNF-001 | HTTPS obrigatório no ambiente publicado; HTTP aceito no desenvolvimento local. | Evita exigir certificado na máquina de cada integrante. |
 | RNF-007 | Cita React + Capacitor. | Decisão do grupo de 15/11. |
-| RNF-016 | Proposta: Android 8.0 (API 26) ou superior. | O texto anterior não definia a versão. |
-| RNF-019 | Novo, proposto. | Conceito de sistemas distribuídos da SA. |
+| RNF-016 | Android 8.0 (API 26) ou superior (confirmado em 18/11). | O texto anterior não definia a versão. |
+| RNF-019 | Novo (confirmado em 18/11). | Conceito de sistemas distribuídos da SA. |

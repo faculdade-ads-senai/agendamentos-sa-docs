@@ -6,10 +6,15 @@
 flowchart LR
     web["Painel web<br>React + Vite<br>(administrador)"] -->|HTTPS + JSON| api
     app["App Android<br>React + Capacitor<br>(paciente)"] -->|HTTPS + JSON| api
+    web & app -. "Entrar com Google" .-> google["Google<br>(login)"]
+    api -. confere o token do Google .-> google
     api["API REST<br>Spring Boot 4 / Java 21"] -->|JDBC + Flyway| db[("PostgreSQL<br>produção: Neon")]
     envio["Envio de notificações<br>processo agendado"] -->|lê PENDENTE,<br>marca ENVIADA ou FALHA| db
+    envio -->|API HTTP| brevo["Brevo<br>(e-mail com convite .ics)"]
     api -. grava notificação<br>na mesma transação .-> db
 ```
+
+Decisões de 17/11/2026 (DEC-02): o login é só pela conta Google, e o backend devolve o JWT do próprio sistema; o e-mail sai pela API HTTP da Brevo, porque o plano gratuito do Render bloqueia SMTP; o e-mail leva um convite de agenda (`.ics`), e o sistema não grava nada na agenda Google de ninguém. A tela do médico (painel ou app) está em decisão (DEC-04).
 
 | Parte | Tecnologia | Repositório | Situação em 15/11/2026 |
 |---|---|---|---|

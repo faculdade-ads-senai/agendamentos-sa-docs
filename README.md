@@ -26,25 +26,24 @@ Este repositório substitui a pasta do Google Drive. Requisitos, arquitetura, ba
 | `VictorKLing/frontend-agendamento` | Painel web (React + Vite) e, provavelmente, o app do paciente: o Capacitor gera o APK do mesmo projeto React (a confirmar com o Victor) |
 | `agendamentos-sa-docs` | Esta documentação |
 
-## Decisões a confirmar pelo grupo
+## Decisões da versão 1
 
-O resto da documentação descreve o que já foi decidido ou já está no código. Só estes itens são propostas:
+O grupo fechou as decisões técnicas em sala em 17/11/2026 (DEC-02 e DEC-03). Em resumo:
 
-1. Consultas de 30 minutos, configuráveis por janela da agenda.
-2. Na versão 1, notificações só no canal interno (lista no app); lembrete 24 horas antes da consulta.
-3. Cancelar e reagendar sem antecedência mínima; motivo do cancelamento opcional; o administrador altera qualquer consulta; o paciente, só as próprias consultas futuras.
-4. Recuperação de senha (RF-004) fora da versão 1.
-5. App para Android 8.0 ou superior.
-6. Notificações assíncronas (RNF-019) como o conceito de sistemas distribuídos da SA.
+- Login só com a conta Google, para todos. Sem senha e sem recuperação de senha.
+- Perfis: paciente, médico e administrador. O administrador faz também o papel da recepcionista.
+- Consulta de 30 a 60 minutos, definida pelo médico em cada janela da agenda.
+- Notificações na caixa de entrada do app e do painel e por e-mail, com convite para a Google Agenda. Lembrete 24 horas antes. Sem push no celular.
+- Paciente cancela ou reagenda até 24 horas antes; médico só cancela; administrador faz tudo. Motivo obrigatório no cancelamento.
+- Backend: Yuri com os módulos 1, 3 e 5; Pierre com os módulos 2 e 4. API publicada no Render pelo Luís.
 
-Quem discordar abre uma issue ou fala no grupo; sem objeção, valem como decididos.
+A tabela completa está em [Decisões da versão 1](banco-de-dados/MODELO_DADOS.md#decisões-da-versão-1-dec-02-e-dec-03).
 
-Em aberto, sem proposta (precisa de resposta do grupo):
+Ainda em aberto (DEC-04, no Trello):
 
-- Perfis `MEDICO` e `RECEPCIONISTA`: ganham telas na versão 1 ou ficam para depois? Se entrarem, o médico vê a própria agenda e conclui a consulta, e o recepcionista cadastra o paciente e agenda ou cancela por ele. O médico exige uma migração nova (V4, `medico.usuario_id`) e mudanças no backend; o recepcionista só muda o backend.
-- Divisão do backend por módulo: Yuri com os módulos 1, 3 e 5 e Pierre com os módulos 2 e 4 (lembrança do Luís, a confirmar). O Yuri se atribuiu ao cadastro de médicos (módulo 2) no Trello em 27/10.
-- Publicação da API na nuvem e quem publica (o enunciado fala em backend hospedado em nuvem).
-- Painel e app no mesmo projeto React.
+- Onde fica a tela do médico: no painel web ou no app.
+- Como a consulta vira `CONCLUIDA`: sozinha, depois do horário, ou o médico marca.
+- Painel e app no mesmo projeto React (a confirmar com o Victor).
 
 ## Módulos do sistema
 

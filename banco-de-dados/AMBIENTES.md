@@ -26,7 +26,7 @@ Nos dois ambientes a estrutura vem das mesmas migrações Flyway do backend. Nin
    ```
 
 3. Rode o backend. Na primeira subida o Flyway aplica V1, V2 e V3.
-4. Para ter dados de demonstração no Windows, o jeito mais fácil é um comando na pasta do backend: `powershell -ExecutionPolicy Bypass -File scripts\demo-local.ps1` (para parar, o mesmo comando com `-Parar`). Ele usa um PostgreSQL próprio na porta 5433, sem instalar nada e sem mexer no seu banco, e sobe o backend e o painel. Sem o script: crie uma vez o banco `agenda_sa_demo` (`CREATE DATABASE agenda_sa_demo;`) e rode com `SPRING_PROFILES_ACTIVE=dev`. O perfil `dev` usa esse banco separado, e o `agenda_sa` fica sem dados de mentira. Usuários: `admin.demo@example.com`, `ana.demo@example.com` e `bruno.demo@example.com`, senha `Demo@1234`. Para atualizar as datas das consultas, apague e recrie o `agenda_sa_demo`. Os dados, o perfil `dev` e o script estão na `master` do backend desde 16/11.
+4. Para ter dados de demonstração no Windows, o jeito mais fácil é um comando na pasta do backend: `powershell -ExecutionPolicy Bypass -File scripts\demo-local.ps1` (para parar, o mesmo comando com `-Parar`). Ele usa um PostgreSQL próprio na porta 5433, sem instalar nada e sem mexer no seu banco, e sobe o backend e o painel. Sem o script: crie uma vez o banco `agenda_sa_demo` (`CREATE DATABASE agenda_sa_demo;`) e rode com `SPRING_PROFILES_ACTIVE=dev`. O perfil `dev` usa esse banco separado, e o `agenda_sa` fica sem dados de mentira. Usuários: `admin.demo@example.com` (administrador), `ana.demo@example.com` e `bruno.demo@example.com` (pacientes) e `carla.demo@example.com`, `diego.demo@example.com` e `elisa.demo@example.com` (médicos, desde a V4), senha `Demo@1234`. Essa senha é do login de teste, que só vale no perfil `dev`; fora dele o login é pela conta Google (decisão de 17/11). Para atualizar as datas das consultas, apague e recrie o `agenda_sa_demo`. Os dados, o perfil `dev` e o script estão na `master` do backend desde 16/11.
 5. Para conferir as restrições do banco, rode [validacao_restricoes.sql](validacao_restricoes.sql) no DBeaver, pgAdmin ou psql. Ele desfaz tudo no fim.
 
 Para recomeçar do zero: apague e recrie o banco `agenda_sa` e suba o backend de novo.
@@ -63,7 +63,7 @@ Para recomeçar do zero: apague e recrie o banco `agenda_sa` e suba o backend de
 
    Devem aparecer V1, V2 e V3 com `success = true`.
 
-7. Primeiro administrador: desde o login com JWT (15/11), `POST /api/v1/usuarios` exige um `ADMIN` logado. O primeiro é criado direto no banco com o `scripts/criar-admin.sql` do backend, no SQL Editor do Neon (troque nome, e-mail e senha no próprio editor). O editor guarda o histórico das consultas: use uma senha provisória e troque-a em seguida pelo painel (edição de usuário). Os próximos usuários saem pelo painel.
+7. Primeiro administrador: desde o login com JWT (15/11), `POST /api/v1/usuarios` exige um `ADMIN` logado. O primeiro é criado direto no banco com o `scripts/criar-admin.sql` do backend, no SQL Editor do Neon (troque nome, e-mail e senha no próprio editor). O editor guarda o histórico das consultas: use uma senha provisória e troque-a em seguida pelo painel (edição de usuário). Os próximos usuários saem pelo painel. Com o login pelo Google (V4), o administrador é criado só com nome e o e-mail da conta Google dele, sem senha: no primeiro login o sistema o reconhece pelo e-mail.
 
 ### Regras
 

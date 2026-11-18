@@ -1,6 +1,6 @@
--- Agenda SA - validação das restrições do banco (V1 a V3)
+-- Agenda SA - validação das restrições do banco (V1 a V4)
 --
--- Rode num banco onde o Flyway já aplicou V1, V2 e V3 (psql, DBeaver ou pgAdmin).
+-- Rode num banco onde o Flyway já aplicou V1 a V4 (psql, DBeaver ou pgAdmin).
 -- Tudo acontece numa transação desfeita no fim: nenhum dado fica gravado.
 -- Cada verificação imprime "OK: ..."; a primeira que falhar interrompe com "FALHOU: ...".
 -- No DBeaver, as mensagens aparecem na aba "Output" (habilite "Show server output").
@@ -45,9 +45,28 @@ BEGIN
     END;
 
     INSERT INTO usuario (nome, email, senha_hash, perfil)
-    VALUES ('Validação Médico', 'validacao.medico@example.com', 'hash', 'MEDICO'),
-           ('Validação Recepção', 'validacao.recepcao@example.com', 'hash', 'RECEPCIONISTA');
-    RAISE NOTICE 'OK: perfis MEDICO e RECEPCIONISTA são aceitos (V2)';
+    VALUES ('Validação Médico', 'validacao.medico@example.com', 'hash', 'MEDICO');
+    RAISE NOTICE 'OK: perfil MEDICO é aceito';
+
+    BEGIN
+        INSERT INTO usuario (nome, email, senha_hash, perfil)
+        VALUES ('Validação Recepção', 'validacao.recepcao@example.com', 'hash', 'RECEPCIONISTA');
+        RAISE EXCEPTION 'FALHOU: perfil RECEPCIONISTA foi aceito depois da V4';
+    EXCEPTION WHEN check_violation THEN
+        RAISE NOTICE 'OK: perfil RECEPCIONISTA é rejeitado depois da V4 (recepcionista é o ADMIN)';
+    END;
+
+    INSERT INTO usuario (nome, email, perfil, google_id)
+    VALUES ('Validação Google', 'validacao.google@example.com', 'PACIENTE', 'validacao-sub-1');
+    RAISE NOTICE 'OK: usuário do Google sem senha é aceito (V4)';
+
+    BEGIN
+        INSERT INTO usuario (nome, email, perfil, google_id)
+        VALUES ('Mesma conta Google', 'validacao.google2@example.com', 'PACIENTE', 'validacao-sub-1');
+        RAISE EXCEPTION 'FALHOU: a mesma conta Google ficou em dois usuários';
+    EXCEPTION WHEN unique_violation THEN
+        RAISE NOTICE 'OK: a mesma conta Google não entra em dois usuários';
+    END;
 
     BEGIN
         INSERT INTO usuario (nome, email, senha_hash, perfil)
@@ -69,6 +88,18 @@ BEGIN
     INSERT INTO medico (nome, crm, uf_crm, especialidade)
     VALUES ('Mesmo CRM, outra UF', 'VAL-0001', 'PR', 'Pediatria');
     RAISE NOTICE 'OK: o mesmo número de CRM em outra UF é aceito';
+
+    UPDATE medico SET usuario_id = (SELECT id FROM usuario WHERE email = 'validacao.medico@example.com')
+     WHERE id = m1;
+    RAISE NOTICE 'OK: médico ligado a um usuário (V4)';
+
+    BEGIN
+        UPDATE medico SET usuario_id = (SELECT id FROM usuario WHERE email = 'validacao.medico@example.com')
+         WHERE id = m2;
+        RAISE EXCEPTION 'FALHOU: o mesmo usuário ficou ligado a dois médicos';
+    EXCEPTION WHEN unique_violation THEN
+        RAISE NOTICE 'OK: um usuário fica ligado a no máximo um médico';
+    END;
 
     BEGIN
         INSERT INTO medico (nome, crm, uf_crm, especialidade)
@@ -108,12 +139,24 @@ BEGIN
         RAISE NOTICE 'OK: janela invertida é rejeitada';
     END;
 
+    INSERT INTO agenda_medico (medico_id, dia_semana, hora_inicio, hora_fim, duracao_minutos)
+    VALUES (m1, 3, '08:00', '12:00', 60);
+    RAISE NOTICE 'OK: duração de 60 minutos é aceita';
+
     BEGIN
         INSERT INTO agenda_medico (medico_id, dia_semana, hora_inicio, hora_fim, duracao_minutos)
-        VALUES (m1, 2, '08:00', '12:00', 0);
-        RAISE EXCEPTION 'FALHOU: duração zero foi aceita';
+        VALUES (m1, 2, '08:00', '12:00', 20);
+        RAISE EXCEPTION 'FALHOU: duração de 20 minutos foi aceita';
     EXCEPTION WHEN check_violation THEN
-        RAISE NOTICE 'OK: duração fora de 5 a 480 minutos é rejeitada';
+        RAISE NOTICE 'OK: duração abaixo de 30 minutos é rejeitada (V4)';
+    END;
+
+    BEGIN
+        INSERT INTO agenda_medico (medico_id, dia_semana, hora_inicio, hora_fim, duracao_minutos)
+        VALUES (m1, 2, '08:00', '12:00', 90);
+        RAISE EXCEPTION 'FALHOU: duração de 90 minutos foi aceita';
+    EXCEPTION WHEN check_violation THEN
+        RAISE NOTICE 'OK: duração acima de 60 minutos é rejeitada (V4)';
     END;
 
     -- bloqueio_agenda ---------------------------------------------------------
@@ -171,6 +214,15 @@ BEGIN
         RAISE EXCEPTION 'FALHOU: status fora da lista foi aceito';
     EXCEPTION WHEN check_violation THEN
         RAISE NOTICE 'OK: status fora de AGENDADA/CANCELADA/CONCLUIDA é rejeitado';
+    END;
+
+    BEGIN
+        UPDATE agendamento
+           SET status = 'CANCELADA', cancelado_em = now(), cancelado_por_id = pa
+         WHERE paciente_id = pa AND medico_id = m1 AND inicio = base;
+        RAISE EXCEPTION 'FALHOU: cancelamento sem motivo foi aceito';
+    EXCEPTION WHEN check_violation THEN
+        RAISE NOTICE 'OK: cancelamento sem motivo é rejeitado (V4)';
     END;
 
     UPDATE agendamento

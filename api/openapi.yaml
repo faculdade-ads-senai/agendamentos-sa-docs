@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Agenda SA API
-  version: 1.2.0
+  version: 1.3.0
   description: |
     Contrato REST do sistema de agendamento de consultas. Os clientes são o painel web
     (administração) e o aplicativo React + Capacitor (paciente), que consomem a mesma API.
@@ -19,9 +19,23 @@ info:
     exigem `ADMIN`; as demais rotas exigem apenas um usuário autenticado. As restrições por
     perfil citadas nas outras operações são o planejado e ainda não estão no código.
 
-    Perfis: na versão 1 só `ADMIN` e `PACIENTE` têm uso. `MEDICO` e `RECEPCIONISTA`
-    existem no banco (migração V2), mas ficam reservados: não têm permissões próprias e não
-    têm vínculo com a tabela `medico`.
+    Perfis (decisão do grupo de 17/11/2026, DEC-02): `ADMIN` (faz também o papel da
+    recepcionista), `PACIENTE` e `MEDICO`. O médico é ligado ao cadastro `medico` pela
+    migração V4 do banco.
+
+    Login (V4): só pela conta Google, em `POST /auth/google`. O backend confere o token do
+    Google e devolve o JWT do próprio sistema. `POST /auth/login` (e-mail e senha) fica só no
+    perfil `dev`, como login de teste dos usuários de demonstração.
+
+    Mudanças da 1.3.0 (18/11/2026), com as decisões do DEC-02 e do DEC-03:
+    - novo `POST /auth/google` (planejado); `POST /auth/login` passa a ser só do perfil `dev`;
+    - saem `POST /auth/cadastro` (o paciente é criado no primeiro login com o Google) e
+      `POST /auth/recuperacao-senha` (RF-004 fora da versão 1);
+    - perfil `RECEPCIONISTA` sai; `MEDICO` passa a ter uso;
+    - médico ganha `email` (conta Google com que ele entra);
+    - duração das janelas de 30 a 60 minutos;
+    - regras de cancelamento e reagendamento (quem, até quando, motivo, erros e avisos);
+    - `motivo` obrigatório no cancelamento; opcional no reagendamento.
 
     Mudanças da 1.2.0 (16/11/2026), para acompanhar o master do backend:
     - perfil `ADMINISTRADOR` volta a ser `ADMIN` (migração V3 do backend);
@@ -54,39 +68,17 @@ tags:
   - name: Notificações
 
 paths:
-  /auth/cadastro:
-    post:
-      tags: [Autenticação]
-      summary: Cadastrar paciente
-      description: Rota pública. O perfil é sempre `PACIENTE`.
-      operationId: cadastrarPaciente
-      x-status: planejado
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CadastroPacienteRequest'
-      responses:
-        '201':
-          description: Paciente cadastrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UsuarioResponse'
-        '400':
-          $ref: '#/components/responses/DadosInvalidos'
-        '409':
-          $ref: '#/components/responses/Conflito'
-
   /auth/login:
     post:
       tags: [Autenticação]
-      summary: Autenticar usuário
+      summary: Login de teste com e-mail e senha (perfil dev)
       description: |
         Devolve um JWT válido por 1 hora (`expiresIn` em segundos) e o usuário. E-mail
         inexistente, senha errada ou usuário inativo devolvem o mesmo 401. Resposta sem cache.
+
+        Decisão de 17/11/2026: esta rota passa a existir só no perfil `dev`, para os usuários
+        de demonstração (senha `Demo@1234`). No ambiente publicado o login é por
+        `POST /auth/google`. Hoje ela ainda está ativa em todos os perfis.
       operationId: autenticar
       x-status: implementado
       x-origem: master
@@ -109,6 +101,39 @@ paths:
         '401':
           $ref: '#/components/responses/NaoAutorizado'
 
+  /auth/google:
+    post:
+      tags: [Autenticação]
+      summary: Entrar com a conta Google
+      description: |
+        O cliente faz o login do Google (botão "Entrar com Google" no painel ou no app) e manda
+        o token de identidade (`idToken`) recebido. O backend confere a assinatura, o emissor,
+        a validade e o público (os IDs de cliente do projeto no Google Cloud) e procura o
+        usuário: primeiro pelo `google_id`; depois pelo e-mail, caso de quem o administrador já
+        cadastrou (médicos e administradores), gravando o `google_id`; se não achar, cria um
+        usuário `PACIENTE`. Devolve o mesmo JWT de `POST /auth/login`.
+        Token inválido, vencido ou de outro projeto, e usuário inativo, devolvem 401.
+      operationId: autenticarComGoogle
+      x-status: planejado
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginGoogleRequest'
+      responses:
+        '200':
+          description: Autenticação realizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+
   /auth/me:
     get:
       tags: [Autenticação]
@@ -116,6 +141,8 @@ paths:
       description: |
         Devolve o usuário autenticado, lido do banco a cada requisição; usuário desativado
         recebe 401. Usado pelo painel para restaurar a sessão.
+        Planejado (V4): para o perfil `MEDICO`, a resposta inclui `medicoId`, o cadastro de
+        médico ligado ao usuário.
       operationId: consultarUsuarioAutenticado
       x-status: implementado
       x-origem: master
@@ -128,31 +155,6 @@ paths:
                 $ref: '#/components/schemas/UsuarioResponse'
         '401':
           $ref: '#/components/responses/NaoAutorizado'
-
-  /auth/recuperacao-senha:
-    post:
-      tags: [Autenticação]
-      summary: Solicitar recuperação de senha
-      operationId: solicitarRecuperacaoSenha
-      x-status: planejado
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [email]
-              properties:
-                email:
-                  type: string
-                  format: email
-      responses:
-        '202':
-          description: Solicitação aceita sem revelar se o e-mail existe
-        '400':
-          $ref: '#/components/responses/DadosInvalidos'
 
   /usuarios/me:
     get:
@@ -200,10 +202,12 @@ paths:
       tags: [Usuários]
       summary: Criar usuário
       description: |
-        Cria um usuário ativo com qualquer perfil. Restrito a `ADMIN`; o autocadastro de
-        paciente é `/auth/cadastro`.
+        Cria um usuário ativo com qualquer perfil. Restrito a `ADMIN`; o paciente também é
+        criado sozinho no primeiro login com o Google.
         Nome e e-mail têm espaços das extremidades removidos; o e-mail é salvo em minúsculas e
         é único sem diferenciar maiúsculas, inclusive entre inativos. A senha é guardada com BCrypt.
+        Planejado (V4): a senha passa a ser opcional, porque a pessoa entra com a conta Google do
+        e-mail cadastrado. Médico se cadastra por `POST /medicos`, que cria o usuário `MEDICO`.
       operationId: criarUsuario
       x-status: implementado
       x-origem: master
@@ -393,7 +397,10 @@ paths:
     post:
       tags: [Médicos]
       summary: Cadastrar médico
-      description: Requer perfil `ADMIN`. CRM e UF juntos são únicos.
+      description: |
+        Requer perfil `ADMIN`. CRM e UF juntos são únicos. O `email` é a conta Google com que o
+        médico vai entrar: a operação cria o usuário `MEDICO` com esse e-mail e liga ao cadastro
+        do médico (`medico.usuario_id`, V4). E-mail já usado devolve 409.
       operationId: cadastrarMedico
       x-status: planejado
       requestBody:
@@ -740,6 +747,9 @@ paths:
     get:
       tags: [Agendamentos]
       summary: Listar os próprios agendamentos
+      description: |
+        Paciente: as próprias consultas. Médico: as consultas da própria agenda (do médico ligado
+        ao usuário). Próximas e histórico saem do mesmo resultado, filtrando por status e data.
       operationId: listarMeusAgendamentos
       x-status: planejado
       parameters:
@@ -765,7 +775,9 @@ paths:
     get:
       tags: [Agendamentos]
       summary: Consultar agendamento
-      description: Paciente acessa apenas o próprio registro; `ADMIN` acessa qualquer registro.
+      description: |
+        Paciente acessa apenas o próprio registro; médico, as consultas da própria agenda;
+        `ADMIN`, qualquer registro. Consulta de outra pessoa devolve 404.
       operationId: consultarAgendamento
       x-status: planejado
       responses:
@@ -784,6 +796,19 @@ paths:
     patch:
       tags: [Agendamentos]
       summary: Reagendar consulta
+      description: |
+        Regras do DEC-03 (17/11/2026):
+        - paciente: só as próprias consultas, até 24 horas antes do início;
+        - `ADMIN`: qualquer consulta, sem prazo mínimo;
+        - médico não reagenda (cancela, e o paciente ou o administrador marca de novo);
+        - só consultas futuras com status `AGENDADA`; o novo horário passa pelas mesmas
+          validações da criação, na mesma transação;
+        - `motivo` é opcional e vai só no texto do aviso;
+        - avisa o paciente e o médico da consulta, menos quem reagendou (caixa de entrada e
+          e-mail com o convite de agenda atualizado).
+
+        Erros: 404 para consulta de outra pessoa ou perfil sem permissão; 409 para horário
+        ocupado; 422 para consulta passada, já cancelada ou a menos de 24 horas (paciente).
       operationId: reagendarConsulta
       x-status: planejado
       requestBody:
@@ -814,6 +839,21 @@ paths:
     patch:
       tags: [Agendamentos]
       summary: Cancelar consulta
+      description: |
+        Regras do DEC-03 (17/11/2026):
+        - paciente: só as próprias consultas, até 24 horas antes do início;
+        - médico: só as consultas da própria agenda, sem prazo mínimo;
+        - `ADMIN`: qualquer consulta, sem prazo mínimo;
+        - só consultas futuras com status `AGENDADA`;
+        - `motivo` é obrigatório para todos (o banco recusa cancelamento sem motivo, V4);
+        - grava `cancelado_em` e `cancelado_por_id`, libera o horário e mantém a consulta no
+          histórico;
+        - avisa o paciente e o médico da consulta, menos quem cancelou (caixa de entrada e
+          e-mail com o convite de cancelamento).
+
+        Erros: 400 sem motivo; 404 para consulta de outra pessoa ou perfil sem permissão; 422
+        para consulta passada, já cancelada ou a menos de 24 horas (paciente), com mensagem
+        para falar com a clínica.
       operationId: cancelarConsulta
       x-status: planejado
       requestBody:
@@ -833,13 +873,16 @@ paths:
           $ref: '#/components/responses/DadosInvalidos'
         '404':
           $ref: '#/components/responses/NaoEncontrado'
-        '409':
-          $ref: '#/components/responses/Conflito'
+        '422':
+          $ref: '#/components/responses/RegraViolada'
 
   /notificacoes/me:
     get:
       tags: [Notificações]
       summary: Listar as próprias notificações
+      description: |
+        Caixa de entrada do app e do painel: as notificações do canal `SISTEMA` do usuário
+        autenticado. As do canal `EMAIL` são enviadas em segundo plano e não aparecem aqui.
       operationId: listarMinhasNotificacoes
       x-status: planejado
       parameters:
@@ -971,10 +1014,10 @@ components:
   schemas:
     Perfil:
       type: string
-      enum: [ADMIN, PACIENTE, MEDICO, RECEPCIONISTA]
+      enum: [ADMIN, PACIENTE, MEDICO]
       description: |
-        Na versão 1 só `ADMIN` e `PACIENTE` têm uso. `MEDICO` e `RECEPCIONISTA`
-        ficam reservados: sem permissões próprias e sem vínculo com a tabela `medico`.
+        `ADMIN` faz também o papel da recepcionista. `MEDICO` é ligado a um cadastro de médico
+        (V4). `RECEPCIONISTA` saiu na V4.
     StatusAgendamento:
       type: string
       enum: [AGENDADA, CANCELADA, CONCLUIDA]
@@ -1005,18 +1048,6 @@ components:
       maxLength: 72
       writeOnly: true
       description: De 8 a 72 caracteres e no máximo 72 bytes UTF-8; não é aparada nem pode ser só espaços.
-
-    CadastroPacienteRequest:
-      type: object
-      additionalProperties: false
-      required: [nome, email, senha]
-      properties:
-        nome:
-          $ref: '#/components/schemas/Nome'
-        email:
-          $ref: '#/components/schemas/Email'
-        senha:
-          $ref: '#/components/schemas/Senha'
 
     CriarUsuarioRequest:
       type: object
@@ -1073,6 +1104,15 @@ components:
         email:
           $ref: '#/components/schemas/Email'
 
+    LoginGoogleRequest:
+      type: object
+      additionalProperties: false
+      required: [idToken]
+      properties:
+        idToken:
+          type: string
+          description: Token de identidade (JWT) que o Google devolve ao cliente no login.
+
     LoginRequest:
       type: object
       additionalProperties: false
@@ -1128,10 +1168,12 @@ components:
     MedicoRequest:
       type: object
       additionalProperties: false
-      required: [nome, crm, ufCrm, especialidade]
+      required: [nome, email, crm, ufCrm, especialidade]
       properties:
         nome:
           $ref: '#/components/schemas/Nome'
+        email:
+          $ref: '#/components/schemas/Email'
         crm:
           type: string
           minLength: 1
@@ -1151,6 +1193,8 @@ components:
       properties:
         nome:
           $ref: '#/components/schemas/Nome'
+        email:
+          $ref: '#/components/schemas/Email'
         crm:
           type: string
           minLength: 1
@@ -1205,9 +1249,10 @@ components:
           $ref: '#/components/schemas/Hora'
         duracaoMinutos:
           type: integer
-          minimum: 5
-          maximum: 480
+          minimum: 30
+          maximum: 60
           example: 30
+          description: Definida pelo médico em cada janela (decisão de 17/11/2026, V4).
 
     AgendaMedicoRequest:
       type: object
@@ -1315,14 +1360,21 @@ components:
         inicio:
           type: string
           format: date-time
+        motivo:
+          type: string
+          maxLength: 255
+          description: Opcional; vai só no texto do aviso.
 
     CancelarAgendamentoRequest:
       type: object
       additionalProperties: false
+      required: [motivo]
       properties:
         motivo:
           type: string
+          minLength: 1
           maxLength: 255
+          description: Obrigatório para todos (DEC-03); não pode ser só espaços.
 
     AgendamentoResponse:
       type: object
