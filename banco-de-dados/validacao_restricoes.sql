@@ -291,5 +291,6 @@ ROLLBACK;
 -- Conexão 1:
 --   COMMIT;
 -- Resultado esperado na conexão 2: erro "conflicting key value violates exclusion
--- constraint ex_agendamento_medico_sem_sobreposicao". A API deve devolver 409.
+-- constraint ex_agendamento_medico_sem_sobreposicao". A API devolve isso como horário
+-- ocupado (tabela "Códigos de erro" no topo do api/openapi.yaml).
 -- Depois: ROLLBACK na conexão 2 e apague a consulta de teste da conexão 1.
