@@ -99,7 +99,6 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 |---|---|---|---|---|
 | [DEC-04](#dec-04) | Decidir a tela do médico e como a consulta vira concluída | Para o grupo decidir | Todos (Luís registra) | 21/11 |
 | [INF-01](#inf-01) | Criar o projeto no Google Cloud e a conta da Brevo | A fazer | Luís | 21/11 |
-| [BE-03](#be-03) | Implementar o cadastro de médicos | A fazer | Pierre (o Yuri passou o cartão para ele no Trello em 16/11) | 25/11 |
 | [BE-05](#be-05) | Implementar agendamentos | A fazer | Yuri (módulo 3) | 28/11 |
 | [BE-09](#be-09) | Implementar o histórico e as listas de consultas | A fazer | Pierre (módulo 4) | 01/12 |
 | [BE-06](#be-06) | Implementar notificações: caixa de entrada, e-mail e lembrete | A fazer | Yuri (módulo 5) | 02/12 |
@@ -120,6 +119,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 | [API-01](#api-01) | Revisar e congelar o contrato OpenAPI v1 | Em andamento | Luís (revisores: Yuri, Pierre e Victor) | 20/11 |
 | [BE-01](#be-01) | Completar a base do backend e o ambiente local | Em andamento | Yuri e Pierre | 20/11 |
 | [BE-02](#be-02) | Implementar o login com Google e o perfil do usuário | Em andamento | Yuri | 22/11 |
+| [BE-03](#be-03) | Implementar o cadastro de médicos | Em andamento | Pierre (o Yuri passou o cartão para ele no Trello em 16/11) | 25/11 |
 | [BE-04](#be-04) | Concluir agenda e bloqueios (branch feature/api-agendas) | Em andamento | Pierre | 19/11 |
 | [FE-01W](#fe-01w) | Estruturar a base do painel web administrativo | Em andamento | Victor | 20/11 |
 | [FE-02](#fe-02) | Implementar o login com Google no painel e no app | Em andamento | Victor | 25/11 |
@@ -290,51 +290,6 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RNF-002** — O sistema não deve armazenar senhas: a autenticação é feita pela conta Google, e o backend confere o token do Google antes de emitir o próprio token de acesso. As senhas dos usuários de demonstração do ambiente de desenvolvimento usam hash BCrypt.
 
 **Links:** [banco-de-dados/AMBIENTES.md](../banco-de-dados/AMBIENTES.md) · [arquitetura/ARQUITETURA.md](../arquitetura/ARQUITETURA.md)
-
-<a id="be-03"></a>
-
-#### BE-03 — Implementar o cadastro de médicos
-
-**Lista:** A fazer · **Responsável:** Pierre (o Yuri passou o cartão para ele no Trello em 16/11) · **Prazo (proposta):** 25/11 · **Depende de:** BE-04 (merge da branch), BE-02, V4 (DB-01) · **Etiquetas:** Backend
-
-**Módulo do enunciado:** 2 — Agenda de profissionais
-
-**Pra quê.** Administrador cadastra, edita, lista e desativa médicos; paciente lista para escolher; o médico entra com o Google.
-
-**O que já se sabe**
-
-- A entidade Medico e o MedicoRepository (com lock pessimista) estão na branch feature/api-agendas; o CRUD ainda não existe. Rotas planejadas: GET e POST /medicos, GET e PATCH /medicos/{id}.
-- Desde a V4 (decisão de 17/11) o médico entra no sistema: o cadastro recebe o e-mail Google dele, cria o usuário MEDICO e liga em medico.usuario_id, na mesma transação. No primeiro login com o Google o sistema reconhece o médico pelo e-mail.
-
-**Entra:** listagem paginada com os filtros do contrato; cadastro com e-mail Google; edição; desativação lógica. **Fica de fora:** o login em si (BE-02); a tela do médico (FE-07).
-
-**Passos**
-
-- [x] Reaproveitar Medico e MedicoRepository da branch feature/api-agendas
-- [ ] Ligar a entidade Medico ao usuário (usuario_id, V4)
-- [ ] DTOs e validações: e-mail, CRM, UF com duas letras maiúsculas, especialidade
-- [ ] GET /medicos paginado com filtros
-- [ ] POST /medicos criando o usuário MEDICO com o e-mail Google, na mesma transação; GET /medicos/{id}
-- [ ] PATCH /medicos/{id}, incluindo ativar e desativar
-- [ ] Erros pela tabela de erros do contrato: CRM/UF ou e-mail repetido é conflito (no PR #2, IllegalArgumentException ainda vira erro 500)
-- [ ] Restringir escrita a ADMIN
-- [ ] Testes de duplicidade, validação e permissão
-- [ ] Atualizar x-status no openapi.yaml
-
-**Pronto quando**
-
-- [ ] Mesmo CRM em outra UF é aceito; mesmo CRM e UF é recusado como conflito
-- [ ] Médico desativado continua no histórico e some da escolha do paciente
-- [ ] Paciente lista, mas não altera
-- [ ] O médico cadastrado entra com o Google e cai no perfil MEDICO
-
-**Requisitos deste cartão**
-
-- **RN-003** — Apenas administradores podem cadastrar, editar ou desativar médicos.
-- **RN-011** — A desativação de um médico deve impedir a criação de novos agendamentos para esse profissional.
-- **RF-007** — O sistema deve permitir que administradores cadastrem, editem, consultem e desativem médicos.
-
-**Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml) · [branch feature/api-agendas](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/tree/feature/api-agendas)
 
 <a id="be-05"></a>
 
@@ -1240,6 +1195,52 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RNF-018** — As funcionalidades críticas de autenticação e agendamento devem possuir testes automatizados.
 
 **Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml) · [MODELO_DADOS.md (Login com Google)](../banco-de-dados/MODELO_DADOS.md) · [API-USUARIOS.md](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/blob/master/API-USUARIOS.md) · [AUTENTICACAO.md](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/blob/master/AUTENTICACAO.md)
+
+<a id="be-03"></a>
+
+#### BE-03 — Implementar o cadastro de médicos
+
+**Lista:** Em andamento · **Responsável:** Pierre (o Yuri passou o cartão para ele no Trello em 16/11) · **Prazo (proposta):** 25/11 · **Depende de:** BE-04 (merge da branch), BE-02, V4 (DB-01) · **Etiquetas:** Backend
+
+**Módulo do enunciado:** 2 — Agenda de profissionais
+
+**Pra quê.** Administrador cadastra, edita, lista e desativa médicos; paciente lista para escolher; o médico entra com o Google.
+
+**O que já se sabe**
+
+- A entidade Medico e o MedicoRepository (com lock pessimista) estão na branch feature/api-agendas; o CRUD ainda não existe. Rotas planejadas: GET e POST /medicos, GET e PATCH /medicos/{id}.
+- Desde a V4 (decisão de 17/11) o médico entra no sistema: o cadastro recebe o e-mail Google dele, cria o usuário MEDICO e liga em medico.usuario_id, na mesma transação. No primeiro login com o Google o sistema reconhece o médico pelo e-mail.
+- 21/11: o Pierre abriu o PR #2 (feature/api-medicos, parcial) com POST, GET /medicos/{id} e PATCH. O próprio PR lista o que falta: cadastro por e-mail, validações, 409 de duplicidade, lista paginada com filtros, escrita só para ADMIN, testes e x-status.
+
+**Entra:** listagem paginada com os filtros do contrato; cadastro com e-mail Google; edição; desativação lógica. **Fica de fora:** o login em si (BE-02); a tela do médico (FE-07).
+
+**Passos**
+
+- [x] Reaproveitar Medico e MedicoRepository da branch feature/api-agendas
+- [ ] Ligar a entidade Medico ao usuário (usuario_id, V4)
+- [ ] DTOs e validações: e-mail, CRM, UF com duas letras maiúsculas, especialidade
+- [ ] GET /medicos paginado com filtros
+- [ ] POST /medicos criando o usuário MEDICO com o e-mail Google, na mesma transação; GET /medicos/{id}
+- [x] PATCH /medicos/{id}, incluindo ativar e desativar (marcado pelo Pierre, 21/11)
+- [ ] Erros pela tabela de erros do contrato: CRM/UF ou e-mail repetido é conflito (no PR #2, IllegalArgumentException ainda vira erro 500)
+- [ ] Restringir escrita a ADMIN
+- [ ] Testes de duplicidade, validação e permissão
+- [ ] Atualizar x-status no openapi.yaml
+
+**Pronto quando**
+
+- [ ] Mesmo CRM em outra UF é aceito; mesmo CRM e UF é recusado como conflito
+- [ ] Médico desativado continua no histórico e some da escolha do paciente
+- [ ] Paciente lista, mas não altera
+- [ ] O médico cadastrado entra com o Google e cai no perfil MEDICO
+
+**Requisitos deste cartão**
+
+- **RN-003** — Apenas administradores podem cadastrar, editar ou desativar médicos.
+- **RN-011** — A desativação de um médico deve impedir a criação de novos agendamentos para esse profissional.
+- **RF-007** — O sistema deve permitir que administradores cadastrem, editem, consultem e desativem médicos.
+
+**Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml) · [PR #2 (médicos, parcial)](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/pull/2) · [branch feature/api-agendas](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/tree/feature/api-agendas)
 
 <a id="be-04"></a>
 
