@@ -1,0 +1,1566 @@
+openapi: 3.0.3
+info:
+  title: Agenda SA API
+  version: 1.3.0
+  description: |
+    Contrato REST do sistema de agendamento de consultas. Os clientes são o painel web
+    (administração) e o aplicativo React + Capacitor (paciente), que consomem a mesma API.
+    Datas e horas são transmitidas em ISO-8601 com deslocamento de fuso; a exibição usa
+    `America/Sao_Paulo`.
+
+    Cada operação traz `x-status`:
+    - `implementado`: existe no código; `x-origem` indica onde (`master` ou `PR #2`,
+      branch `feature/api-agendas`). O PR #2 foi fechado sem merge em 15/11/2026 até o
+      autor apresentar a implementação ao grupo; o código continua na branch.
+    - `planejado`: faz parte do contrato, mas ainda não foi implementado.
+
+    Segurança (master desde 15/11/2026): API sem estado, com JWT HS256 de 1 hora no cabeçalho
+    `Authorization: Bearer`. `POST /auth/login` é público; `/usuarios` e `/usuarios/{usuarioId}`
+    exigem `ADMIN`; as demais rotas exigem apenas um usuário autenticado. As restrições por
+    perfil citadas nas outras operações são o planejado e ainda não estão no código.
+
+    Perfis (decisão do grupo de 17/11/2026, DEC-02): `ADMIN` (faz também o papel da
+    recepcionista), `PACIENTE` e `MEDICO`. O médico é ligado ao cadastro `medico` pela
+    migração V4 do banco.
+
+    Login (V4): só pela conta Google, em `POST /auth/google`. O backend confere o token do
+    Google e devolve o JWT do próprio sistema. `POST /auth/login` (e-mail e senha) fica só no
+    perfil `dev`, como login de teste dos usuários de demonstração.
+
+    Mudanças da 1.3.0 (18/11/2026), com as decisões do DEC-02 e do DEC-03:
+    - novo `POST /auth/google` (planejado); `POST /auth/login` passa a ser só do perfil `dev`;
+    - saem `POST /auth/cadastro` (o paciente é criado no primeiro login com o Google) e
+      `POST /auth/recuperacao-senha` (RF-004 fora da versão 1);
+    - perfil `RECEPCIONISTA` sai; `MEDICO` passa a ter uso;
+    - médico ganha `email` (conta Google com que ele entra);
+    - duração das janelas de 30 a 60 minutos;
+    - regras de cancelamento e reagendamento (quem, até quando, motivo, erros e avisos);
+    - `motivo` obrigatório no cancelamento; opcional no reagendamento.
+
+    Mudanças da 1.2.0 (16/11/2026), para acompanhar o master do backend:
+    - perfil `ADMINISTRADOR` volta a ser `ADMIN` (migração V3 do backend);
+    - `POST /auth/login` implementado; novo `GET /auth/me`, implementado, que devolve o
+      usuário do token (o `GET /usuarios/me` do contrato continua planejado);
+    - todo o CRUD `/usuarios`, inclusive o `POST`, exige `ADMIN`; o paciente se cadastra
+      por `/auth/cadastro` (planejado).
+
+    Mudanças da 1.1.0 (15/11/2026):
+    - clientes: painel web e aplicativo React + Capacitor (decisão do grupo, 15/11/2026);
+    - perfil `ADMIN` passa a ser `ADMINISTRADOR`; `MEDICO` e `RECEPCIONISTA` entram como reservados;
+    - CRUD `/usuarios` e `/usuarios/{id}` descrito como implementado; ele substitui a antiga
+      rota de listagem de pacientes;
+    - paginação segue o padrão do código: parâmetros `page`, `size`, `sort` e corpo
+      `content`, `page`, `size`, `totalElements`, `totalPages`;
+    - erros seguem o ProblemDetail do Spring (`type`, `title`, `status`, `detail`, `instance`)
+      com a lista `erros` (`campo`, `mensagem`) nas validações;
+    - 400 para formato e validação de campos; 422 para regra de intervalo ou de agenda violada;
+    - rotas de agenda conforme o PR #2: novo `GET /medicos/{medicoId}/bloqueios`, janelas
+      sem `id` na resposta, 409 para médico inativo ou consultas no período bloqueado.
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Desenvolvimento local
+tags:
+  - name: Autenticação
+  - name: Usuários
+  - name: Médicos
+  - name: Agendas
+  - name: Agendamentos
+  - name: Notificações
+
+paths:
+  /auth/login:
+    post:
+      tags: [Autenticação]
+      summary: Login de teste com e-mail e senha (perfil dev)
+      description: |
+        Devolve um JWT válido por 1 hora (`expiresIn` em segundos) e o usuário. E-mail
+        inexistente, senha errada ou usuário inativo devolvem o mesmo 401. Resposta sem cache.
+
+        Decisão de 17/11/2026: esta rota passa a existir só no perfil `dev`, para os usuários
+        de demonstração (senha `Demo@1234`). No ambiente publicado o login é por
+        `POST /auth/google`. Hoje ela ainda está ativa em todos os perfis.
+      operationId: autenticar
+      x-status: implementado
+      x-origem: master
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Autenticação realizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+
+  /auth/google:
+    post:
+      tags: [Autenticação]
+      summary: Entrar com a conta Google
+      description: |
+        O cliente faz o login do Google (botão "Entrar com Google" no painel ou no app) e manda
+        o token de identidade (`idToken`) recebido. O backend confere a assinatura, o emissor,
+        a validade e o público (os IDs de cliente do projeto no Google Cloud) e procura o
+        usuário: primeiro pelo `google_id`; depois pelo e-mail, caso de quem o administrador já
+        cadastrou (médicos e administradores), gravando o `google_id`; se não achar, cria um
+        usuário `PACIENTE`. Devolve o mesmo JWT de `POST /auth/login`.
+        Token inválido, vencido ou de outro projeto, e usuário inativo, devolvem 401.
+      operationId: autenticarComGoogle
+      x-status: planejado
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginGoogleRequest'
+      responses:
+        '200':
+          description: Autenticação realizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+
+  /auth/me:
+    get:
+      tags: [Autenticação]
+      summary: Consultar o usuário do token
+      description: |
+        Devolve o usuário autenticado, lido do banco a cada requisição; usuário desativado
+        recebe 401. Usado pelo painel para restaurar a sessão.
+        Planejado (V4): para o perfil `MEDICO`, a resposta inclui `medicoId`, o cadastro de
+        médico ligado ao usuário.
+      operationId: consultarUsuarioAutenticado
+      x-status: implementado
+      x-origem: master
+      responses:
+        '200':
+          description: Usuário autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+
+  /usuarios/me:
+    get:
+      tags: [Usuários]
+      summary: Consultar o próprio cadastro
+      operationId: consultarMeuUsuario
+      x-status: planejado
+      responses:
+        '200':
+          description: Usuário autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+    patch:
+      tags: [Usuários]
+      summary: Atualizar o próprio cadastro
+      description: O usuário altera apenas nome e e-mail; perfil e situação ficam com o administrador.
+      operationId: atualizarMeuUsuario
+      x-status: planejado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AtualizarMeuUsuarioRequest'
+      responses:
+        '200':
+          description: Cadastro atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '409':
+          $ref: '#/components/responses/Conflito'
+
+  /usuarios:
+    post:
+      tags: [Usuários]
+      summary: Criar usuário
+      description: |
+        Cria um usuário ativo com qualquer perfil. Restrito a `ADMIN`; o paciente também é
+        criado sozinho no primeiro login com o Google.
+        Nome e e-mail têm espaços das extremidades removidos; o e-mail é salvo em minúsculas e
+        é único sem diferenciar maiúsculas, inclusive entre inativos. A senha é guardada com BCrypt.
+        Planejado (V4): a senha passa a ser opcional, porque a pessoa entra com a conta Google do
+        e-mail cadastrado. Médico se cadastra por `POST /medicos`, que cria o usuário `MEDICO`.
+      operationId: criarUsuario
+      x-status: implementado
+      x-origem: master
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CriarUsuarioRequest'
+      responses:
+        '201':
+          description: Usuário criado
+          headers:
+            Location:
+              description: URL do usuário criado
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
+        '409':
+          description: E-mail já cadastrado, inclusive em gravações concorrentes
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+    get:
+      tags: [Usuários]
+      summary: Listar usuários
+      description: |
+        Lista paginada de todos os perfis, inclusive inativos. Restrito a `ADMIN`.
+        Atende ao RF-008 (consulta de pacientes pelo
+        administrador) e substitui a rota de listagem de pacientes da versão 1.0.0.
+        Os filtros `perfil` e `busca` ainda não existem no código.
+      operationId: listarUsuarios
+      x-status: implementado
+      x-origem: master
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - name: sort
+          in: query
+          description: Um campo e a direção, separados por vírgula.
+          schema:
+            type: string
+            default: id,asc
+            pattern: '^(id|nome|email|perfil|ativo|criadoEm|atualizadoEm),([aA][sS][cC]|[dD][eE][sS][cC])$'
+            example: nome,asc
+        - name: perfil
+          in: query
+          description: Filtro por perfil. Planejado, ainda não implementado.
+          x-status: planejado
+          schema:
+            $ref: '#/components/schemas/Perfil'
+        - name: busca
+          in: query
+          description: Busca por nome ou e-mail. Planejado, ainda não implementado.
+          x-status: planejado
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Página de usuários
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaUsuarios'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
+
+  /usuarios/{usuarioId}:
+    parameters:
+      - $ref: '#/components/parameters/UsuarioId'
+    get:
+      tags: [Usuários]
+      summary: Consultar usuário
+      description: Restrito a `ADMIN`.
+      operationId: consultarUsuario
+      x-status: implementado
+      x-origem: master
+      responses:
+        '200':
+          description: Usuário encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+    put:
+      tags: [Usuários]
+      summary: Atualizar usuário
+      description: |
+        Substitui nome, e-mail, perfil e situação. A senha é opcional: ausente ou `null`
+        mantém a atual. `ativo: true` reativa um usuário. Restrito a `ADMIN`.
+      operationId: atualizarUsuario
+      x-status: implementado
+      x-origem: master
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AtualizarUsuarioRequest'
+      responses:
+        '200':
+          description: Usuário atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflito'
+    delete:
+      tags: [Usuários]
+      summary: Desativar usuário
+      description: |
+        Desativação lógica; preserva agendamentos e histórico. Retorna 204 também quando o
+        usuário já está inativo. Restrito a `ADMIN`.
+      operationId: desativarUsuario
+      x-status: implementado
+      x-origem: master
+      responses:
+        '204':
+          description: Usuário desativado
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /medicos:
+    get:
+      tags: [Médicos]
+      summary: Listar médicos
+      operationId: listarMedicos
+      x-status: planejado
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - name: ativo
+          in: query
+          schema:
+            type: boolean
+        - name: especialidade
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Página de médicos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaMedicos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+    post:
+      tags: [Médicos]
+      summary: Cadastrar médico
+      description: |
+        Requer perfil `ADMIN`. CRM e UF juntos são únicos. O `email` é a conta Google com que o
+        médico vai entrar: a operação cria o usuário `MEDICO` com esse e-mail e liga ao cadastro
+        do médico (`medico.usuario_id`, V4). E-mail já usado devolve 409.
+      operationId: cadastrarMedico
+      x-status: planejado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicoRequest'
+      responses:
+        '201':
+          description: Médico cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicoResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '403':
+          $ref: '#/components/responses/Proibido'
+        '409':
+          $ref: '#/components/responses/Conflito'
+
+  /medicos/{medicoId}:
+    parameters:
+      - $ref: '#/components/parameters/MedicoId'
+    get:
+      tags: [Médicos]
+      summary: Consultar médico
+      operationId: consultarMedico
+      x-status: planejado
+      responses:
+        '200':
+          description: Médico encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicoResponse'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+    patch:
+      tags: [Médicos]
+      summary: Atualizar ou desativar médico
+      description: Requer perfil `ADMIN`. A propriedade `ativo` faz a desativação lógica.
+      operationId: atualizarMedico
+      x-status: planejado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AtualizarMedicoRequest'
+      responses:
+        '200':
+          description: Médico atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicoResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '403':
+          $ref: '#/components/responses/Proibido'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflito'
+
+  /medicos/{medicoId}/agenda:
+    parameters:
+      - $ref: '#/components/parameters/MedicoId'
+    get:
+      tags: [Agendas]
+      summary: Consultar agenda semanal do médico
+      description: Requer usuário autenticado. Retorna só as janelas ativas, por dia e hora de início.
+      operationId: consultarAgendaMedico
+      x-status: implementado
+      x-origem: PR #2
+      responses:
+        '200':
+          description: Agenda semanal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaMedicoResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+    put:
+      tags: [Agendas]
+      summary: Substituir agenda semanal do médico
+      description: |
+        Requer perfil `ADMIN`. A lista enviada passa a ser a agenda ativa completa;
+        lista vazia desativa a agenda semanal. Janelas do mesmo dia não podem se sobrepor
+        (adjacentes são aceitas) e cada janela precisa comportar ao menos uma consulta.
+        Consultas já marcadas são mantidas.
+      operationId: substituirAgendaMedico
+      x-status: implementado
+      x-origem: PR #2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgendaMedicoRequest'
+      responses:
+        '200':
+          description: Agenda atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaMedicoResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          description: Médico inativo
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          $ref: '#/components/responses/RegraViolada'
+
+  /medicos/{medicoId}/bloqueios:
+    parameters:
+      - $ref: '#/components/parameters/MedicoId'
+    get:
+      tags: [Agendas]
+      summary: Listar bloqueios ativos do médico
+      description: Requer perfil `ADMIN`. Ordenados pelo início.
+      operationId: listarBloqueiosAgenda
+      x-status: implementado
+      x-origem: PR #2
+      responses:
+        '200':
+          description: Bloqueios ativos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BloqueioAgendaResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+    post:
+      tags: [Agendas]
+      summary: Criar bloqueio de agenda
+      description: |
+        Requer perfil `ADMIN`. Não cancela consultas: se houver consulta `AGENDADA`
+        no período, o bloqueio é recusado com 409.
+      operationId: criarBloqueioAgenda
+      x-status: implementado
+      x-origem: PR #2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BloqueioAgendaRequest'
+      responses:
+        '201':
+          description: Bloqueio criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloqueioAgendaResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          description: Médico inativo ou consultas agendadas no período
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          $ref: '#/components/responses/RegraViolada'
+
+  /medicos/{medicoId}/bloqueios/{bloqueioId}:
+    parameters:
+      - $ref: '#/components/parameters/MedicoId'
+      - name: bloqueioId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+    delete:
+      tags: [Agendas]
+      summary: Desativar bloqueio de agenda
+      description: |
+        Requer perfil `ADMIN`. Exclusão lógica, para manter rastreabilidade;
+        repetir a chamada num bloqueio existente também retorna 204.
+      operationId: desativarBloqueioAgenda
+      x-status: implementado
+      x-origem: PR #2
+      responses:
+        '204':
+          description: Bloqueio desativado
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /medicos/{medicoId}/horarios-disponiveis:
+    parameters:
+      - $ref: '#/components/parameters/MedicoId'
+      - name: data
+        in: query
+        required: true
+        description: Dia consultado, no fuso `America/Sao_Paulo`.
+        schema:
+          type: string
+          format: date
+          example: '2026-11-17'
+    get:
+      tags: [Agendas]
+      summary: Consultar horários disponíveis
+      description: |
+        Requer usuário autenticado. Gera os horários pela duração de cada janela e retira os
+        que já passaram, os que cruzam bloqueio ativo e os ocupados por consulta `AGENDADA`.
+        Médico inativo ou data passada retornam lista vazia. O resultado é uma fotografia: a
+        confirmação do agendamento revalida o horário.
+      operationId: consultarHorariosDisponiveis
+      x-status: implementado
+      x-origem: PR #2
+      responses:
+        '200':
+          description: Horários livres
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HorarioDisponivel'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /agendamentos:
+    post:
+      tags: [Agendamentos]
+      summary: Criar agendamento
+      operationId: criarAgendamento
+      x-status: planejado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CriarAgendamentoRequest'
+      responses:
+        '201':
+          description: Agendamento confirmado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendamentoResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '409':
+          description: Horário indisponível ou conflito concorrente
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: Horário fora da agenda, no passado ou com médico inativo
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+    get:
+      tags: [Agendamentos]
+      summary: Listar agendamentos para administração
+      description: Requer perfil `ADMIN`.
+      operationId: listarAgendamentos
+      x-status: planejado
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - name: inicio
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: fim
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: medicoId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: pacienteId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/StatusAgendamento'
+      responses:
+        '200':
+          description: Página de agendamentos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaAgendamentos'
+        '403':
+          $ref: '#/components/responses/Proibido'
+
+  /agendamentos/me:
+    get:
+      tags: [Agendamentos]
+      summary: Listar os próprios agendamentos
+      description: |
+        Paciente: as próprias consultas. Médico: as consultas da própria agenda (do médico ligado
+        ao usuário). Próximas e histórico saem do mesmo resultado, filtrando por status e data.
+      operationId: listarMeusAgendamentos
+      x-status: planejado
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/StatusAgendamento'
+      responses:
+        '200':
+          description: Página de agendamentos do paciente autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaAgendamentos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+
+  /agendamentos/{agendamentoId}:
+    parameters:
+      - $ref: '#/components/parameters/AgendamentoId'
+    get:
+      tags: [Agendamentos]
+      summary: Consultar agendamento
+      description: |
+        Paciente acessa apenas o próprio registro; médico, as consultas da própria agenda;
+        `ADMIN`, qualquer registro. Consulta de outra pessoa devolve 404.
+      operationId: consultarAgendamento
+      x-status: planejado
+      responses:
+        '200':
+          description: Agendamento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendamentoResponse'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /agendamentos/{agendamentoId}/reagendamento:
+    parameters:
+      - $ref: '#/components/parameters/AgendamentoId'
+    patch:
+      tags: [Agendamentos]
+      summary: Reagendar consulta
+      description: |
+        Regras do DEC-03 (17/11/2026):
+        - paciente: só as próprias consultas, até 24 horas antes do início;
+        - `ADMIN`: qualquer consulta, sem prazo mínimo;
+        - médico não reagenda (cancela, e o paciente ou o administrador marca de novo);
+        - só consultas futuras com status `AGENDADA`; o novo horário passa pelas mesmas
+          validações da criação, na mesma transação;
+        - `motivo` é opcional e vai só no texto do aviso;
+        - avisa o paciente e o médico da consulta, menos quem reagendou (caixa de entrada e
+          e-mail com o convite de agenda atualizado).
+
+        Erros: 404 para consulta de outra pessoa ou perfil sem permissão; 409 para horário
+        ocupado; 422 para consulta passada, já cancelada ou a menos de 24 horas (paciente).
+      operationId: reagendarConsulta
+      x-status: planejado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReagendarAgendamentoRequest'
+      responses:
+        '200':
+          description: Consulta reagendada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendamentoResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflito'
+        '422':
+          $ref: '#/components/responses/RegraViolada'
+
+  /agendamentos/{agendamentoId}/cancelamento:
+    parameters:
+      - $ref: '#/components/parameters/AgendamentoId'
+    patch:
+      tags: [Agendamentos]
+      summary: Cancelar consulta
+      description: |
+        Regras do DEC-03 (17/11/2026):
+        - paciente: só as próprias consultas, até 24 horas antes do início;
+        - médico: só as consultas da própria agenda, sem prazo mínimo;
+        - `ADMIN`: qualquer consulta, sem prazo mínimo;
+        - só consultas futuras com status `AGENDADA`;
+        - `motivo` é obrigatório para todos (o banco recusa cancelamento sem motivo, V4);
+        - grava `cancelado_em` e `cancelado_por_id`, libera o horário e mantém a consulta no
+          histórico;
+        - avisa o paciente e o médico da consulta, menos quem cancelou (caixa de entrada e
+          e-mail com o convite de cancelamento).
+
+        Erros: 400 sem motivo; 404 para consulta de outra pessoa ou perfil sem permissão; 422
+        para consulta passada, já cancelada ou a menos de 24 horas (paciente), com mensagem
+        para falar com a clínica.
+      operationId: cancelarConsulta
+      x-status: planejado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelarAgendamentoRequest'
+      responses:
+        '200':
+          description: Consulta cancelada e horário liberado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendamentoResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '422':
+          $ref: '#/components/responses/RegraViolada'
+
+  /notificacoes/me:
+    get:
+      tags: [Notificações]
+      summary: Listar as próprias notificações
+      description: |
+        Caixa de entrada do app e do painel: as notificações do canal `SISTEMA` do usuário
+        autenticado. As do canal `EMAIL` são enviadas em segundo plano e não aparecem aqui.
+      operationId: listarMinhasNotificacoes
+      x-status: planejado
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - name: somenteNaoLidas
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Página de notificações
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaNotificacoes'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+
+  /notificacoes/{notificacaoId}/leitura:
+    parameters:
+      - name: notificacaoId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+    patch:
+      tags: [Notificações]
+      summary: Marcar notificação como lida
+      operationId: marcarNotificacaoComoLida
+      x-status: planejado
+      responses:
+        '204':
+          description: Notificação marcada como lida
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Planejado. Hoje o backend usa a configuração padrão do Spring Security.
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      description: Número da página, começando em 0.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Size:
+      name: size
+      in: query
+      description: Itens por página.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    UsuarioId:
+      name: usuarioId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    MedicoId:
+      name: medicoId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    AgendamentoId:
+      name: agendamentoId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+
+  responses:
+    NaoAutorizado:
+      description: Usuário não autenticado ou credencial inválida
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+    Proibido:
+      description: Usuário sem permissão para a operação
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+    NaoEncontrado:
+      description: Recurso não encontrado
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+    Conflito:
+      description: Conflito com o estado atual do recurso
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+    DadosInvalidos:
+      description: Formato ou validação de campos inválidos; a lista `erros` aponta os campos
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+    RegraViolada:
+      description: Os campos são válidos, mas violam uma regra de intervalo ou de agenda
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problema'
+
+  schemas:
+    Perfil:
+      type: string
+      enum: [ADMIN, PACIENTE, MEDICO]
+      description: |
+        `ADMIN` faz também o papel da recepcionista. `MEDICO` é ligado a um cadastro de médico
+        (V4). `RECEPCIONISTA` saiu na V4.
+    StatusAgendamento:
+      type: string
+      enum: [AGENDADA, CANCELADA, CONCLUIDA]
+    TipoNotificacao:
+      type: string
+      enum: [CONFIRMACAO, LEMBRETE, CANCELAMENTO, ALTERACAO]
+    CanalNotificacao:
+      type: string
+      enum: [SISTEMA, EMAIL]
+    StatusNotificacao:
+      type: string
+      enum: [PENDENTE, ENVIADA, FALHA]
+
+    Nome:
+      type: string
+      minLength: 1
+      maxLength: 120
+      description: Não pode ser vazio; espaços das extremidades são removidos.
+    Email:
+      type: string
+      format: email
+      maxLength: 254
+      description: Espaços das extremidades são removidos e o valor é salvo em minúsculas.
+    Senha:
+      type: string
+      format: password
+      minLength: 8
+      maxLength: 72
+      writeOnly: true
+      description: De 8 a 72 caracteres e no máximo 72 bytes UTF-8; não é aparada nem pode ser só espaços.
+
+    CriarUsuarioRequest:
+      type: object
+      required: [nome, email, senha, perfil]
+      properties:
+        nome:
+          $ref: '#/components/schemas/Nome'
+        email:
+          $ref: '#/components/schemas/Email'
+        senha:
+          $ref: '#/components/schemas/Senha'
+        perfil:
+          $ref: '#/components/schemas/Perfil'
+      example:
+        nome: Ana Silva
+        email: ana@example.com
+        senha: minhaSenha123
+        perfil: PACIENTE
+
+    AtualizarUsuarioRequest:
+      type: object
+      required: [nome, email, perfil, ativo]
+      properties:
+        nome:
+          $ref: '#/components/schemas/Nome'
+        email:
+          $ref: '#/components/schemas/Email'
+        senha:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 72
+          writeOnly: true
+          nullable: true
+          description: Opcional; ausente ou `null` mantém a senha atual. Vazia é inválida; mesmas regras de `Senha`.
+        perfil:
+          $ref: '#/components/schemas/Perfil'
+        ativo:
+          type: boolean
+          description: '`true` reativa um usuário inativo.'
+      example:
+        nome: Ana Silva
+        email: ana@example.com
+        perfil: PACIENTE
+        ativo: true
+
+    AtualizarMeuUsuarioRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        nome:
+          $ref: '#/components/schemas/Nome'
+        email:
+          $ref: '#/components/schemas/Email'
+
+    LoginGoogleRequest:
+      type: object
+      additionalProperties: false
+      required: [idToken]
+      properties:
+        idToken:
+          type: string
+          description: Token de identidade (JWT) que o Google devolve ao cliente no login.
+
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, senha]
+      properties:
+        email:
+          type: string
+          format: email
+        senha:
+          type: string
+          format: password
+
+    TokenResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn, usuario]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Validade do token em segundos.
+          example: 3600
+        usuario:
+          $ref: '#/components/schemas/UsuarioResponse'
+
+    UsuarioResponse:
+      type: object
+      description: Senha e hash nunca fazem parte da resposta. As datas são geradas pelo banco.
+      required: [id, nome, email, perfil, ativo, criadoEm, atualizadoEm]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        perfil:
+          $ref: '#/components/schemas/Perfil'
+        ativo:
+          type: boolean
+        criadoEm:
+          type: string
+          format: date-time
+        atualizadoEm:
+          type: string
+          format: date-time
+
+    MedicoRequest:
+      type: object
+      additionalProperties: false
+      required: [nome, email, crm, ufCrm, especialidade]
+      properties:
+        nome:
+          $ref: '#/components/schemas/Nome'
+        email:
+          $ref: '#/components/schemas/Email'
+        crm:
+          type: string
+          minLength: 1
+          maxLength: 20
+        ufCrm:
+          type: string
+          pattern: '^[A-Z]{2}$'
+        especialidade:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    AtualizarMedicoRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        nome:
+          $ref: '#/components/schemas/Nome'
+        email:
+          $ref: '#/components/schemas/Email'
+        crm:
+          type: string
+          minLength: 1
+          maxLength: 20
+        ufCrm:
+          type: string
+          pattern: '^[A-Z]{2}$'
+        especialidade:
+          type: string
+          minLength: 1
+          maxLength: 100
+        ativo:
+          type: boolean
+
+    MedicoResponse:
+      allOf:
+        - $ref: '#/components/schemas/MedicoRequest'
+        - type: object
+          required: [id, ativo, criadoEm, atualizadoEm]
+          properties:
+            id:
+              type: integer
+              format: int64
+            ativo:
+              type: boolean
+            criadoEm:
+              type: string
+              format: date-time
+            atualizadoEm:
+              type: string
+              format: date-time
+
+    Hora:
+      type: string
+      pattern: '^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$'
+      description: Hora local no formato HH:mm ou HH:mm:ss.
+      example: '08:00:00'
+
+    AgendaItem:
+      type: object
+      additionalProperties: false
+      required: [diaSemana, horaInicio, horaFim, duracaoMinutos]
+      properties:
+        diaSemana:
+          type: integer
+          minimum: 1
+          maximum: 7
+          description: ISO-8601; 1 é segunda-feira e 7 é domingo.
+        horaInicio:
+          $ref: '#/components/schemas/Hora'
+        horaFim:
+          $ref: '#/components/schemas/Hora'
+        duracaoMinutos:
+          type: integer
+          minimum: 30
+          maximum: 60
+          example: 30
+          description: Definida pelo médico em cada janela (decisão de 17/11/2026, V4).
+
+    AgendaMedicoRequest:
+      type: object
+      additionalProperties: false
+      required: [janelas]
+      properties:
+        janelas:
+          type: array
+          description: Agenda completa; lista vazia desativa a agenda semanal.
+          items:
+            $ref: '#/components/schemas/AgendaItem'
+      example:
+        janelas:
+          - diaSemana: 2
+            horaInicio: '08:00:00'
+            horaFim: '12:00:00'
+            duracaoMinutos: 30
+
+    AgendaMedicoResponse:
+      type: object
+      required: [medicoId, janelas]
+      properties:
+        medicoId:
+          type: integer
+          format: int64
+        janelas:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgendaItem'
+
+    BloqueioAgendaRequest:
+      type: object
+      additionalProperties: false
+      required: [inicio, fim, motivo]
+      properties:
+        inicio:
+          type: string
+          format: date-time
+          description: Precisa ser anterior a `fim` (senão 422).
+        fim:
+          type: string
+          format: date-time
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 255
+      example:
+        inicio: '2026-11-17T09:00:00-03:00'
+        fim: '2026-11-17T10:00:00-03:00'
+        motivo: Reunião
+
+    BloqueioAgendaResponse:
+      type: object
+      required: [id, medicoId, inicio, fim, motivo, ativo]
+      properties:
+        id:
+          type: integer
+          format: int64
+        medicoId:
+          type: integer
+          format: int64
+        inicio:
+          type: string
+          format: date-time
+        fim:
+          type: string
+          format: date-time
+        motivo:
+          type: string
+        ativo:
+          type: boolean
+
+    HorarioDisponivel:
+      type: object
+      required: [inicio, fim]
+      properties:
+        inicio:
+          type: string
+          format: date-time
+        fim:
+          type: string
+          format: date-time
+
+    CriarAgendamentoRequest:
+      type: object
+      additionalProperties: false
+      required: [medicoId, inicio]
+      properties:
+        medicoId:
+          type: integer
+          format: int64
+        pacienteId:
+          type: integer
+          format: int64
+          description: Somente `ADMIN` informa outro paciente; para `PACIENTE` é ignorado e usado o usuário autenticado.
+        inicio:
+          type: string
+          format: date-time
+
+    ReagendarAgendamentoRequest:
+      type: object
+      additionalProperties: false
+      required: [inicio]
+      properties:
+        inicio:
+          type: string
+          format: date-time
+        motivo:
+          type: string
+          maxLength: 255
+          description: Opcional; vai só no texto do aviso.
+
+    CancelarAgendamentoRequest:
+      type: object
+      additionalProperties: false
+      required: [motivo]
+      properties:
+        motivo:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Obrigatório para todos (DEC-03); não pode ser só espaços.
+
+    AgendamentoResponse:
+      type: object
+      required: [id, paciente, medico, inicio, fim, status, criadoEm, atualizadoEm]
+      properties:
+        id:
+          type: integer
+          format: int64
+        paciente:
+          $ref: '#/components/schemas/UsuarioResumo'
+        medico:
+          $ref: '#/components/schemas/MedicoResumo'
+        inicio:
+          type: string
+          format: date-time
+        fim:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/StatusAgendamento'
+        motivoCancelamento:
+          type: string
+          nullable: true
+        canceladoEm:
+          type: string
+          format: date-time
+          nullable: true
+        criadoEm:
+          type: string
+          format: date-time
+        atualizadoEm:
+          type: string
+          format: date-time
+
+    UsuarioResumo:
+      type: object
+      required: [id, nome]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+
+    MedicoResumo:
+      type: object
+      required: [id, nome, especialidade]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        especialidade:
+          type: string
+
+    NotificacaoResponse:
+      type: object
+      required: [id, agendamentoId, tipo, canal, status, mensagem, criadaEm]
+      properties:
+        id:
+          type: integer
+          format: int64
+        agendamentoId:
+          type: integer
+          format: int64
+        tipo:
+          $ref: '#/components/schemas/TipoNotificacao'
+        canal:
+          $ref: '#/components/schemas/CanalNotificacao'
+        status:
+          $ref: '#/components/schemas/StatusNotificacao'
+        mensagem:
+          type: string
+        criadaEm:
+          type: string
+          format: date-time
+        enviadaEm:
+          type: string
+          format: date-time
+          nullable: true
+        lidaEm:
+          type: string
+          format: date-time
+          nullable: true
+
+    Pagina:
+      type: object
+      description: Formato de página do código (`UsuarioPageResponse`), adotado em todas as listagens.
+      required: [page, size, totalElements, totalPages]
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    PaginaUsuarios:
+      allOf:
+        - $ref: '#/components/schemas/Pagina'
+        - type: object
+          required: [content]
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/UsuarioResponse'
+
+    PaginaMedicos:
+      allOf:
+        - $ref: '#/components/schemas/Pagina'
+        - type: object
+          required: [content]
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/MedicoResponse'
+
+    PaginaAgendamentos:
+      allOf:
+        - $ref: '#/components/schemas/Pagina'
+        - type: object
+          required: [content]
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/AgendamentoResponse'
+
+    PaginaNotificacoes:
+      allOf:
+        - $ref: '#/components/schemas/Pagina'
+        - type: object
+          required: [content]
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/NotificacaoResponse'
+
+    ErroCampo:
+      type: object
+      required: [campo, mensagem]
+      properties:
+        campo:
+          type: string
+        mensagem:
+          type: string
+
+    Problema:
+      type: object
+      description: ProblemDetail (RFC 9457) gerado pelo Spring. Os valores enviados não são repetidos na resposta.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        erros:
+          type: array
+          description: Presente nos erros de validação de campos e parâmetros.
+          items:
+            $ref: '#/components/schemas/ErroCampo'
+      example:
+        type: about:blank
+        title: Bad Request
+        status: 400
+        detail: Dados do usuário inválidos
+        instance: /api/v1/usuarios
+        erros:
+          - campo: email
+            mensagem: deve ser um endereço de e-mail bem formado
+
+security:
+  - bearerAuth: []

@@ -1,3 +1,7 @@
+> Contrato atual 1.5.0: [cadastro completo e proteção de dados pessoais](api/DADOS-PESSOAIS.md), migrações V1–V7. Nome, CPF, nascimento e e-mail para todos os perfis; ADMIN administra dados pessoais e os demais alteram somente nome/contato próprios.
+
+> Atualização 22/11/2026: contrato atual 1.4.0, perfis ADMIN/MEDICO/PACIENTE e migrações V1–V6. V6 renomeia ADMINISTRADOR para ADMIN sem excluir registros. Menções à V5 e a perfis anteriores abaixo preservam o histórico. Execução e validação: [guia OAuth](api/INTEGRACAO-OAUTH.md).
+
 # Agendamentos SA — Documentação
 
 Documentação compartilhada do sistema de agendamento de consultas, a Situação de Aprendizagem (SA) de Desenvolvimento de Sistemas Web, Desenvolvimento de Sistemas Móveis e Desenvolvimento de Sistemas Distribuídos (SENAI).
@@ -30,14 +34,16 @@ Este repositório substitui a pasta do Google Drive. Requisitos, arquitetura, ba
 
 O grupo fechou as decisões técnicas em sala em 17/11/2026 (DEC-02 e DEC-03). Em resumo:
 
-- Login só com a conta Google, para todos. Sem senha e sem recuperação de senha.
-- Perfis: paciente, médico e administrador. O administrador faz também o papel da recepcionista.
+- Login só com a conta Google, para todos. Atualização solicitada em 21/11: cadastro por convite, Master automático e sessões OIDC; sem senha, JWT próprio ou login de teste.
+- Perfis: `PACIENTE`, `MEDICO` e `ADMIN`. O administrador faz também o papel da recepcionista.
 - Consulta de 30 a 60 minutos, definida pelo médico em cada janela da agenda.
 - Notificações na caixa de entrada do app e do painel e por e-mail, com convite para a Google Agenda. Lembrete 24 horas antes. Sem push no celular.
 - Paciente cancela ou reagenda até 24 horas antes; médico só cancela; administrador faz tudo. Motivo obrigatório no cancelamento.
 - Backend: Yuri com os módulos 1, 3 e 5; Pierre com os módulos 2 e 4. API publicada no Render pelo Luís.
 
 A tabela completa está em [Decisões da versão 1](banco-de-dados/MODELO_DADOS.md#decisões-da-versão-1-dec-02-e-dec-03).
+
+A atualização de 21/11 está descrita nos [requisitos](requisitos/REQUISITOS.md#atualização-de-autenticação-solicitada-em-21112026), no [contrato 1.4.0](api/openapi.yaml) e na V5 do [modelo](banco-de-dados/MODELO_DADOS.md). O código foi conferido no checkout local do backend; merge, publicação, sincronização do Trello e validação com Google real não foram presumidos.
 
 Ainda em aberto (DEC-04, no Trello):
 

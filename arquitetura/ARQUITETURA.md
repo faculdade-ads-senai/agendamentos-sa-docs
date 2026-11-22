@@ -1,3 +1,7 @@
+> Atualização 1.5.0: dados pessoais dos três perfis permanecem em Usuario, protegidos por serviço central AES-256-GCM e índice HMAC do CPF. DTOs gerais não expõem os campos; consultas específicas exigem ADMIN ou proprietário. OAuth/sessões/CSRF permanecem. [Contrato](../api/DADOS-PESSOAIS.md).
+
+> Atualização 22/11/2026: contrato atual 1.4.0, perfis ADMIN/MEDICO/PACIENTE e migrações V1–V6. V6 renomeia ADMINISTRADOR para ADMIN sem excluir registros. Menções à V5 e a perfis anteriores abaixo preservam o histórico. Execução e validação: [guia OAuth](../api/INTEGRACAO-OAUTH.md).
+
 # Arquitetura — Agendamentos SA
 
 ## Visão geral
@@ -7,14 +11,14 @@ flowchart LR
     web["Painel web<br>React + Vite<br>(administrador)"] -->|HTTPS + JSON| api
     app["App Android<br>React + Capacitor<br>(paciente)"] -->|HTTPS + JSON| api
     web & app -. "Entrar com Google" .-> google["Google<br>(login)"]
-    api -. confere o token do Google .-> google
+    api -. "Authorization Code + OIDC<br>callback e sessão segura" .-> google
     api["API REST<br>Spring Boot 4 / Java 21"] -->|JDBC + Flyway| db[("PostgreSQL<br>produção: Neon")]
     envio["Envio de notificações<br>processo agendado"] -->|lê PENDENTE,<br>marca ENVIADA ou FALHA| db
     envio -->|API HTTP| brevo["Brevo<br>(e-mail com convite .ics)"]
     api -. grava notificação<br>na mesma transação .-> db
 ```
 
-Decisões de 17/11/2026 (DEC-02): o login é só pela conta Google, e o backend devolve o JWT do próprio sistema; o e-mail sai pela API HTTP da Brevo, porque o plano gratuito do Render bloqueia SMTP; o e-mail leva um convite de agenda (`.ics`), e o sistema não grava nada na agenda Google de ninguém. A tela do médico (painel ou app) está em decisão (DEC-04).
+Decisões de 17/11/2026 (DEC-02): o login é só pela conta Google; a atualização solicitada em 21/11 substitui o JWT próprio por sessão OIDC, CSRF e cadastro por convite; o e-mail sai pela API HTTP da Brevo, porque o plano gratuito do Render bloqueia SMTP; o e-mail leva um convite de agenda (`.ics`), e o sistema não grava nada na agenda Google de ninguém. A tela do médico (painel ou app) está em decisão (DEC-04).
 
 | Parte | Tecnologia | Repositório | Situação em 15/11/2026 |
 |---|---|---|---|
@@ -34,6 +38,18 @@ Princípios:
 
 As estruturas de pastas abaixo foram definidas pelo grupo e migradas dos arquivos de texto do Google Drive (pasta "Desenvolvimento Web - SA"). O código nos repositórios é a referência quando houver diferença.
 
+## Implementação local conferida em 21/11/2026
+
+O checkout do backend contém os módulos `com.agendaSa.auth`, `usuarios` e `convites`, além de Flyway V1–V5. As árvores abaixo são planejamento e histórico, não inventário de classes existentes. As tabelas de agendas e consultas existem, mas os respectivos controllers/services não estão neste checkout; referências a PRs e branches antigas não significam merge confirmado.
+
+- Login: navegador → `/oauth2/authorization/google` → Google → `/login/oauth2/code/google` → sessão local e destino fixo `FRONTEND_URL`.
+- Identidade: `google_id` armazena o `sub` validado. E-mail verificado é usado no vínculo por convite ou primeiro acesso Master; acessos posteriores usam sub.
+- Autorização: perfil do banco, relido por requisição; ADMIN, MEDICO e PACIENTE. Cadastro público e login dev por senha foram removidos.
+- Convites: `/convite/{token}`, hash no banco, contexto associado ao state OAuth, ativação e consumo na mesma transação com bloqueio de linha.
+- Master: ApplicationRunner transacional e idempotente por `MASTER_EMAIL`, sem senha ou convite.
+- Clientes web: cookies com `credentials: include`, CSRF nas escritas e POST de logout. Nenhum token de acesso em sessionStorage/localStorage.
+- Mobile: validar navegador do sistema, retorno ao app, continuidade da sessão/cookies e SameSite/CORS em APK real no FE-02. O fluxo nativo de envio de idToken não faz parte do contrato atual; integração mobile ainda não foi comprovada.
+- Sessões ficam na instância. Publicação com múltiplas instâncias exige afinidade ou armazenamento compartilhado; não adicionar JWT como alternativa.
 ## Estruturas planejadas
 
 ### Backend (versão 2, atual)

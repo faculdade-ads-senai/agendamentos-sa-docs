@@ -1,10 +1,28 @@
+## Estado atual: V7 — dados pessoais em Usuario
+
+Não foi criada entidade adicional. Usuario ganhou cpf_criptografado, cpf_indice, nascimento_criptografado, telefone_criptografado e endereco_criptografado. Os valores pessoais recuperáveis usam envelope AES-GCM versionado com nonce/tag e AAD por usuário/campo; cpf_indice é HMAC-SHA-256 com chave independente. CPF tem 11 dígitos antes da proteção, nunca texto puro no banco.
+
+A V7 é aditiva, mantém IDs/FKs, vínculos Google, convites e usuários. Colunas são anuláveis para legados; CHECK exige CPF/índice/nascimento juntos e UNIQUE impede duplicação inclusive entre perfis/inativos. cadastroCompleto é calculado, sem coluna de estado duplicada. Perfis continuam ADMIN/MEDICO/PACIENTE. [Detalhes e regularização](../api/DADOS-PESSOAIS.md). As descrições V1–V6 abaixo preservam o histórico.
+
+> Atualização 22/11/2026: contrato atual 1.4.0, perfis ADMIN/MEDICO/PACIENTE e migrações V1–V6. V6 renomeia ADMINISTRADOR para ADMIN sem excluir registros. Menções à V5 e a perfis anteriores abaixo preservam o histórico. Execução e validação: [guia OAuth](../api/INTEGRACAO-OAUTH.md).
+
 # Modelagem de dados — Agendamentos SA
 
-Versão 1.2 — 18/11/2026. Substitui a versão 1.1 (15/11) e a proposta de 27/10.
+Versão 1.3 — 21/11/2026. Inclui a atualização de autenticação solicitada em 21/11 e preserva abaixo o histórico V1–V4.
 
-Situação: as migrações V1 a V3 estão na master do backend (`src/main/resources/db/migration`). A V4, com as decisões do grupo de 17/11 (DEC-02 e DEC-03), está no [PR #1 do backend](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/pull/1) (branch `feature/v4-decisoes-dec02-dec03`), esperando revisão. Este documento já descreve o banco com a V4. Onde cada ambiente roda está em [AMBIENTES.md](AMBIENTES.md).
+Situação conferida no checkout local do backend em 21/11/2026: Flyway V1–V5, entidades de usuários e convites, Master e sessões OIDC. Este documento descreve o schema após V6. Merge de PRs, aplicação no Neon e publicação não foram verificados. Ambientes em [AMBIENTES.md](AMBIENTES.md).
 
-## Mudanças da versão 1.2 (V4, decisões de 17/11)
+## Mudanças da versão 1.3 (V5, solicitação de 21/11)
+
+- `google_id` continua único, mapeado como `googleSub` no Java; não se cria coluna duplicada.
+- `senha_hash` é removida após retirada dos consumidores. Não existe exceção de senha em dev.
+- `ADMIN`/`RECEPCIONISTA` são migrados para `ADMINISTRADOR`; só ADMINISTRADOR, MEDICO e PACIENTE são válidos após V5.
+- `master` e `ativado_em` distinguem o administrador inicial e o cadastro PENDENTE/ATIVADO; `ativo` continua representando bloqueio administrativo.
+- Vínculos Google existentes são preservados e marcados como ativados; usuários sem vínculo precisam de convite. IDs e FKs permanecem.
+- `convite_usuario` guarda hash, prazos, uso, revogação, usuário e administrador emissor. Há índice parcial para um convite não revogado/não utilizado por usuário.
+- Índice parcial permite um Master; CHECK impede Master inativo ou com outro perfil. Provisionamento usa transação e advisory lock PostgreSQL.
+
+## Histórico da versão 1.2 (V4, decisões de 17/11; autenticação substituída pela V5)
 
 - Login só pelo Google: `usuario` ganha `google_id` (único) e `senha_hash` passa a ser opcional. A senha só existe para o login de teste do perfil `dev`.
 - Recepcionista é o próprio administrador: o perfil `RECEPCIONISTA` sai. Valem `ADMIN`, `PACIENTE` e `MEDICO`.
@@ -27,8 +45,8 @@ Situação: as migrações V1 a V3 estão na master do backend (`src/main/resour
 | Banco | PostgreSQL 16+ | Confirmado: Flyway no backend e V1 aplicada. Integridade transacional e restrição de conflito de horários no próprio banco. |
 | Migrações | Flyway, `ddl-auto=validate` | O banco é definido pelas migrações; o Hibernate só confere se as entidades batem com ele. |
 | Clientes | Painel web e app React + Capacitor | Os dois consomem a mesma API REST. |
-| Login | Só pelo Google (V4) | Sem senha para guardar nem recuperar; o e-mail já vem confirmado pelo Google. A senha fica só para o login de teste do perfil `dev`. |
-| Perfis | `ADMIN`, `PACIENTE` e `MEDICO` (V4) | A recepcionista é o administrador; não há perfil próprio. |
+| Login | Google OIDC com sessão (V5) | Sem senha em qualquer ambiente; vínculo inicial controlado por convite ou Master. |
+| Perfis | `ADMIN`, `PACIENTE` e `MEDICO` (V6) | A recepcionista é o administrador; não há perfil próprio. |
 | Médico | Cadastro em `medico` ligado a um usuário `MEDICO` (V4) | O administrador cadastra o médico com o e-mail Google dele; o médico entra e vê a própria agenda. |
 | Especialidade | Atributo de médico | Evita CRUD e tabela adicionais antes de existir necessidade real. |
 | Unidade de saúde | Fora da versão 1 | Uma única clínica (arquitetura do backend: "apenas um consultório"). |
@@ -48,6 +66,9 @@ Os arquivos ficam no backend, em `src/main/resources/db/migration` (V) e `src/ma
 | V2 | `V2__atualizar_perfis_usuario.sql` | Yuri | `ADMIN` vira `ADMINISTRADOR`; perfis aceitos: `ADMINISTRADOR`, `PACIENTE`, `MEDICO`, `RECEPCIONISTA`. |
 | V3 | `V3__renomear_perfil_admin.sql` | Yuri | `ADMINISTRADOR` volta a ser `ADMIN`; perfis aceitos: `ADMIN`, `PACIENTE`, `MEDICO`, `RECEPCIONISTA`. |
 | V4 | `V4__login_google_medico_e_regras_v1.sql` | Luís | `usuario.google_id` e senha opcional; perfil `RECEPCIONISTA` sai (quem tinha vira `ADMIN`); `medico.usuario_id`; duração de 30 a 60 minutos; motivo obrigatório no cancelamento. Ajusta linhas antigas antes de cada restrição nova. |
+| V5 | `V5__google_sso_convites.sql` | Implementação local de 21/11 | Remove senha; migra ADMIN para ADMINISTRADOR; Master, ativação e convites com integridade e índices parciais. |
+| V6 | `V6__padronizar_perfil_admin.sql` | Integração 22/11 | ADMINISTRADOR volta a ADMIN conforme contrato; preserva dados, Master, IDs e FKs. |
+| V7 | `V7__dados_pessoais_usuario.sql` | Cadastro completo | Colunas pessoais cifradas em Usuario, índice HMAC único e CHECK compatível com legados; sem alterar IDs/FKs. |
 | R (dev) | `R__dados_demonstracao.sql` | Luís | Dados fictícios para desenvolvimento e demonstração. Só roda com o perfil `dev`, nunca em produção. |
 
 A extensão `btree_gist`, criada pela V1, é confiável desde o PostgreSQL 13: o dono do banco consegue criá-la sem superusuário. O Neon, usado em produção, oferece a extensão.
@@ -60,6 +81,8 @@ erDiagram
     USUARIO ||--o{ AGENDAMENTO : "criado por"
     USUARIO ||--o{ AGENDAMENTO : "cancelado por"
     USUARIO ||--o{ NOTIFICACAO : recebe
+    USUARIO ||--o{ CONVITE_USUARIO : convidado
+    USUARIO ||--o{ CONVITE_USUARIO : emissor
     USUARIO |o--o| MEDICO : "login do médico"
     MEDICO ||--o{ AGENDA_MEDICO : possui
     MEDICO ||--o{ BLOQUEIO_AGENDA : possui
@@ -71,13 +94,29 @@ erDiagram
         varchar nome
         varchar email UK "único sem diferenciar maiúsculas"
         varchar google_id UK "conta Google (sub do token)"
-        varchar senha_hash "opcional; só login de teste (dev)"
+        boolean master "índice único parcial"
+        timestamptz ativado_em "null enquanto pendente"
         varchar perfil "ADMIN, PACIENTE, MEDICO"
+        text cpf_criptografado "AES-256-GCM"
+        varchar cpf_indice UK "HMAC-SHA-256"
+        text nascimento_criptografado "LocalDate cifrada"
+        text telefone_criptografado
+        text endereco_criptografado
         boolean ativo
         timestamptz criado_em
         timestamptz atualizado_em
     }
 
+    CONVITE_USUARIO {
+        bigint id PK
+        bigint usuario_id FK
+        bigint administrador_id FK
+        varchar token_hash UK "SHA-256; sem token original"
+        timestamptz criado_em
+        timestamptz expira_em
+        timestamptz utilizado_em "uso único"
+        boolean revogado
+    }
     MEDICO {
         bigint id PK
         bigint usuario_id FK "único, opcional"
@@ -150,7 +189,7 @@ erDiagram
 - Guarda os dados comuns de quem acessa o sistema.
 - `email` é único sem diferenciar maiúsculas e minúsculas (índice em `lower(email)`); a API grava em minúsculas.
 - `google_id` guarda o identificador da conta Google (campo `sub` do token). É único e fica vazio até o primeiro login da pessoa.
-- `senha_hash` é opcional: só os usuários de demonstração do perfil `dev` têm senha (hash BCrypt), para o login de teste. Nunca aparece nas respostas da API.
+- `senha_hash` não existe após V5. Não há senha interna em nenhum perfil de execução.
 - `perfil`: ver "Perfis".
 - Um usuário desativado não pode autenticar nem criar agendamentos.
 
@@ -162,16 +201,18 @@ erDiagram
 | `PACIENTE` | Entra com o Google, agenda, cancela e reagenda as próprias consultas (até 24 horas antes) e vê o próprio histórico. |
 | `MEDICO` | Entra com o Google, vê a própria agenda e as consultas dela e cancela consultas da própria agenda, com motivo. Não reagenda. |
 
-### Login com Google
+### Login com Google, Master e convites
 
-O banco não guarda nada do Google além do `google_id`. No login, o backend confere o token do Google e procura o usuário:
+O Spring valida a resposta OIDC do Authorization Code Flow. A aplicação usa `google_id`/sub como identidade estável e o perfil do PostgreSQL como autorização; não emite JWT nem cadastra desconhecidos.
 
-1. pelo `google_id`;
-2. se não achar, pelo `email` (caso de quem o administrador já cadastrou, como médicos), e grava o `google_id`;
-3. se não achar nenhum, cria um usuário `PACIENTE`.
+1. Master é provisionado por `MASTER_EMAIL`, com perfil ADMIN, marcação master e sem senha. O primeiro login associa sub somente ao e-mail Google verificado correspondente. Reinicializações não sobrescrevem esse cadastro.
+2. Administrador cria usuário PENDENTE (`ativado_em=null`) e emite convite. O link contém token aleatório de 32 bytes; somente SHA-256 é persistido. Não há envio automático de e-mail de ativação.
+3. O convidado abre `/convite/{token}` e autentica no Google. O hash fica associado ao state OAuth na sessão, sem enviar o convite ao Google.
+4. A transação bloqueia o usuário, relê o convite e verifica prazo, revogação, uso, bloqueio, cadastro pendente, e-mail verificado correspondente e sub livre. Vincula sub, registra ativação e consumo atomicamente.
+5. Reemissão revoga convites anteriores; alteração de e-mail pendente também os revoga. Um convite consumido não pode ser reutilizado. Contas já vinculadas não mudam e-mail pelo CRUD comum.
+6. GET/PATCH `/usuarios/me` consulta e altera apenas o próprio nome; perfil, vínculo, e-mail, bloqueio e Master permanecem protegidos.
 
-Depois disso o backend devolve o JWT do próprio sistema, com o perfil, como já faz hoje.
-
+O provisionamento falha sem sobrescrever dados se MASTER_EMAIL divergir do Master existente ou se um cadastro de mesmo e-mail for incompatível. Troca do Master exige procedimento controlado. Antes de V5, faça backup e valide em cópia do banco; os hashes removidos não são recuperados por rollback automático. Nunca modifique V1–V4 já aplicadas nem use ddl-auto=create/create-drop em banco existente.
 ### `medico`
 
 - `crm` é único em conjunto com `uf_crm`; `uf_crm` aceita duas letras maiúsculas.
@@ -241,9 +282,9 @@ As validações abaixo dependem de contexto e devem rodar numa transação no ba
 - Em 18/11 o script passou inteiro num PostgreSQL 18.7 com V1 a V4 e os dados de demonstração. A V4 também foi aplicada num banco que já tinha os dados antigos (janelas de 20 minutos e um usuário `RECEPCIONISTA`): as linhas foram ajustadas e as restrições entraram sem erro. O backend da branch da V4 também subiu com o perfil `dev`: Flyway aplicou V1 a V4, o `ddl-auto=validate` passou e o login dos usuários de demonstração funcionou.
 - Concorrência real (duas conexões ao mesmo tempo) não cabe num script só. O roteiro manual está no fim do arquivo.
 
-## Decisões da versão 1 (DEC-02 e DEC-03)
+## Histórico das decisões da versão 1 (DEC-02 e DEC-03)
 
-Fechadas pelo grupo em sala em 17/11/2026 (comentários no Trello) e confirmadas pelo Luís em 18/11.
+Fechadas pelo grupo em sala em 17/11/2026 e confirmadas pelo Luís em 18/11. A tabela abaixo preserva o registro histórico. Login dev, JWT próprio, autocadastro e nome ADMIN foram substituídos pela solicitação de 21/11 descrita no início deste documento; isso não representa nova votação do grupo.
 
 | Item | Decisão |
 |---|---|

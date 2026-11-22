@@ -1,6 +1,14 @@
+## Atualização de cadastro — contrato 1.5.0
+
+ADMIN, MEDICO e PACIENTE têm nome, CPF, nascimento e e-mail obrigatórios em novos cadastros; telefone e endereço são opcionais. ADMIN gerencia os dados pessoais de qualquer usuário, inclusive os próprios. MEDICO/PACIENTE alteram somente nome e contatos próprios, nunca CPF/nascimento. Mantêm-se as proteções de Master, perfil e e-mail vinculado ao Google. Legados e Master automático podem iniciar incompletos e continuam com acesso, sem dados fictícios.
+
+Dados recuperáveis ficam em Usuario com AES-256-GCM; CPF normalizado sem pontuação usa índice HMAC independente, único globalmente inclusive para inativos. Não há senha. [Contrato, segurança e configuração](../api/DADOS-PESSOAIS.md). Esta seção prevalece sobre a limitação histórica de edição própria somente do nome.
+
+> Atualização 22/11/2026: contrato atual 1.4.0, perfis ADMIN/MEDICO/PACIENTE e migrações V1–V6. V6 renomeia ADMINISTRADOR para ADMIN sem excluir registros. Menções à V5 e a perfis anteriores abaixo preservam o histórico. Execução e validação: [guia OAuth](../api/INTEGRACAO-OAUTH.md).
+
 # Requisitos — Agendamentos SA
 
-Versão 1.2 — 18/11/2026. Migrado do documento "Trabalho SA - Desenvolvimento WEB" (Google Drive do grupo), versão de 26/10/2026. A partir de agora este arquivo é a versão oficial; o documento do Drive não é mais atualizado.
+Versão 1.3 — 21/11/2026. Migrado do documento "Trabalho SA - Desenvolvimento WEB" (Google Drive do grupo), versão de 26/10/2026. A partir de agora este arquivo é a versão oficial; o documento do Drive não é mais atualizado.
 
 Clientes: painel web para o administrador (React + Vite) e aplicativo React + Capacitor para o paciente (Android), conforme decisão do grupo de 15/11/2026. Os dois usam a mesma API REST. Onde fica a tela do médico está em decisão (DEC-04).
 
@@ -40,14 +48,16 @@ Os requisitos funcionais definem as operações que o sistema deverá disponibil
 
 | ID | Descrição | Perfil |
 |---|---|---|
-| RF-001 | O sistema deve permitir o cadastro de novos pacientes. O cadastro acontece no primeiro login com a conta Google. | Paciente |
+| RF-001 | O sistema deve permitir que administradores cadastrem pacientes pendentes e emitam convites de ativação; a conta Google não cria cadastro público automaticamente. | Administrador |
 | RF-002 | O sistema deve permitir a autenticação por meio da conta Google. | Todos |
 | RF-003 | O sistema deve permitir que pacientes consultem e atualizem seus dados cadastrais. | Paciente |
 | RF-004 | O sistema deve permitir a recuperação de acesso à conta. **Fora da versão 1:** com o login pelo Google, quem recupera o acesso é o próprio Google. | Todos |
 | RF-005 | O sistema deve permitir o encerramento da sessão do usuário. | Todos |
 | RF-006 | O sistema deve identificar o perfil do usuário e disponibilizar as funcionalidades correspondentes. | Todos |
 
-O sistema não guarda senha. Médicos e administradores são cadastrados antes, com o e-mail da conta Google; no primeiro login, o sistema reconhece a pessoa pelo e-mail. Quem entra sem cadastro vira paciente. No ambiente de desenvolvimento existe também um login de teste com e-mail e senha, só para os usuários de demonstração.
+O sistema não guarda senha nem cria pacientes no primeiro login. Atualização solicitada em 21/11/2026: o administrador cadastra o usuário e gera um convite de uso único; a ativação exige o mesmo e-mail verificado pelo Google e vincula o identificador estável `sub`. O Master, configurado por `MASTER_EMAIL`, é a única exceção ao convite e é provisionado automaticamente. Usuários desconhecidos, bloqueados ou pendentes sem convite válido não recebem acesso. Esta atualização substitui a proposta de cadastro automático e login de teste descrita em 18/11; não altera as demais decisões de agenda e notificações.
+
+No RF-003, o usuário consulta o próprio cadastro e atualiza o nome. E-mail vinculado ao Google, perfil, situação e marcação Master não são editáveis nessa rota. O e-mail não é o identificador permanente da identidade externa.
 
 ### 2.2. Gerenciamento administrativo
 
@@ -114,7 +124,7 @@ Os requisitos não funcionais estabelecem padrões técnicos e de qualidade espe
 | ID | Categoria | Descrição |
 |---|---|---|
 | RNF-001 | Segurança | Toda comunicação entre as interfaces e o backend publicado deve utilizar HTTPS. No desenvolvimento local, HTTP é aceito. |
-| RNF-002 | Segurança | O sistema não deve armazenar senhas: a autenticação é feita pela conta Google, e o backend confere o token do Google antes de emitir o próprio token de acesso. As senhas dos usuários de demonstração do ambiente de desenvolvimento usam hash BCrypt. |
+| RNF-002 | Segurança | Autenticação exclusiva Google OAuth2/OIDC com sessão gerenciada pelo Spring Security, cookies seguros e CSRF. Sem senhas internas, JWT próprio ou login alternativo, inclusive em dev. |
 | RNF-003 | Segurança | As funcionalidades protegidas devem exigir autenticação válida. |
 | RNF-004 | Segurança | O sistema deve implementar controle de acesso baseado nos perfis de paciente, médico e administrador. |
 | RNF-005 | Desempenho | As consultas de disponibilidade devem apresentar respostas em até 3 segundos em condições normais de utilização. |
@@ -153,3 +163,13 @@ O RNF-019 atende ao item da SA que pede pelo menos um conceito de sistemas distr
 | RNF-007 | Cita React + Capacitor. | Decisão do grupo de 15/11. |
 | RNF-016 | Android 8.0 (API 26) ou superior (confirmado em 18/11). | O texto anterior não definia a versão. |
 | RNF-019 | Novo (confirmado em 18/11). | Conceito de sistemas distribuídos da SA. |
+
+## Atualização de autenticação solicitada em 21/11/2026
+
+- RF-001: cadastro controlado por administrador e convite; substitui o autocadastro de 18/11.
+- RF-002/RNF-002: Authorization Code Flow/OIDC nativo do Spring, sessão e CSRF; removidos JWT próprio, senha e exceção dev.
+- RF-003: GET/PATCH do próprio cadastro, permitindo alterar somente o nome.
+- RF-005/RF-006: logout local, perfis ADMIN/MEDICO/PACIENTE carregados do banco e bloqueios aplicados às sessões.
+- Master: provisionamento idempotente por e-mail configurado, primeiro vínculo Google verificado e proteção contra desativação/rebaixamento.
+- Convites: token aleatório armazenado por hash, validade, consumo único e atômico, revogação e reemissão. O administrador copia o link; envio por e-mail fora deste escopo.
+- Implementação local exige revisão e integração antes de considerar BE-02/FE-02 concluídos. Notificações `.ics` são outra funcionalidade e continuam no backlog.

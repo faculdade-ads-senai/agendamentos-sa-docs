@@ -1,6 +1,6 @@
 # Contrato da API — Agendamentos SA
 
-[openapi.yaml](openapi.yaml) é o contrato REST (OpenAPI 3.0.3, versão 1.2.0) usado pelo backend, pelo painel web e pelo app.
+[openapi.yaml](openapi.yaml) é o contrato REST (OpenAPI 3.0.3, versão 1.5.0) usado pelo backend, pelo painel web e pelo app.
 
 ## Como ver
 
@@ -19,3 +19,9 @@
 ## Como mudar
 
 Mudança de rota, campo ou código de resposta entra por PR neste repositório, junto com o PR do backend que a implementa. O frontend só começa a usar uma rota nova depois que ela estiver aqui.
+
+## Integração atual
+
+Login exclusivamente Google OIDC, sessão HTTP e CSRF. Perfis ADMIN, MEDICO e PACIENTE; não há recepcionista. [Matriz de conformidade](CONFORMIDADE.md), [execução e Google Cloud](INTEGRACAO-OAUTH.md) e [contrato legado 1.3.0](historico/openapi-1.3.0.yaml). O histórico descreve decisões substituídas e não deve orientar novas integrações.
+
+[Cadastro completo 1.5.0, criptografia e configuração de chaves](DADOS-PESSOAIS.md).

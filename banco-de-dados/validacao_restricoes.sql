@@ -1,6 +1,6 @@
--- Agenda SA - validação das restrições do banco (V1 a V4)
+-- Agenda SA - validação das restrições do banco (V1 a V5)
 --
--- Rode num banco onde o Flyway já aplicou V1 a V4 (psql, DBeaver ou pgAdmin).
+-- Rode num banco onde o Flyway já aplicou V1 a V5 (psql, DBeaver ou pgAdmin).
 -- Tudo acontece numa transação desfeita no fim: nenhum dado fica gravado.
 -- Cada verificação imprime "OK: ..."; a primeira que falhar interrompe com "FALHOU: ...".
 -- No DBeaver, as mensagens aparecem na aba "Output" (habilite "Show server output").
@@ -8,10 +8,10 @@
 BEGIN;
 
 -- Dados de apoio, com e-mails e CRMs que não colidem com dados reais.
-INSERT INTO usuario (nome, email, senha_hash, perfil)
-VALUES ('Validação Paciente A', 'validacao.a@example.com', 'hash', 'PACIENTE'),
-       ('Validação Paciente B', 'validacao.b@example.com', 'hash', 'PACIENTE'),
-       ('Validação Admin', 'validacao.admin@example.com', 'hash', 'ADMIN');
+INSERT INTO usuario (nome, email, perfil)
+VALUES ('Validação Paciente A', 'validacao.a@example.com', 'PACIENTE'),
+       ('Validação Paciente B', 'validacao.b@example.com', 'PACIENTE'),
+       ('Validação Admin', 'validacao.admin@example.com', 'ADMIN');
 
 INSERT INTO medico (nome, crm, uf_crm, especialidade)
 VALUES ('Validação Médico 1', 'VAL-0001', 'SC', 'Clínica geral'),
@@ -29,28 +29,28 @@ DECLARE
 BEGIN
     -- usuario ---------------------------------------------------------------
     BEGIN
-        INSERT INTO usuario (nome, email, senha_hash, perfil)
-        VALUES ('Duplicado', 'VALIDACAO.A@example.com', 'hash', 'PACIENTE');
+        INSERT INTO usuario (nome, email, perfil)
+        VALUES ('Duplicado', 'VALIDACAO.A@example.com', 'PACIENTE');
         RAISE EXCEPTION 'FALHOU: e-mail repetido com outra caixa foi aceito';
     EXCEPTION WHEN unique_violation THEN
         RAISE NOTICE 'OK: e-mail repetido é rejeitado, sem diferenciar maiúsculas';
     END;
 
     BEGIN
-        INSERT INTO usuario (nome, email, senha_hash, perfil)
-        VALUES ('Perfil antigo', 'validacao.antigo@example.com', 'hash', 'ADMINISTRADOR');
-        RAISE EXCEPTION 'FALHOU: perfil ADMINISTRADOR (da V2) foi aceito depois da V3';
+        INSERT INTO usuario (nome, email, perfil)
+        VALUES ('Perfil antigo', 'validacao.antigo@example.com', 'ADMINISTRADOR');
+        RAISE EXCEPTION 'FALHOU: perfil ADMINISTRADOR legado foi aceito depois da V6';
     EXCEPTION WHEN check_violation THEN
-        RAISE NOTICE 'OK: perfil ADMINISTRADOR é rejeitado depois da V3';
+        RAISE NOTICE 'OK: perfil ADMINISTRADOR legado é rejeitado depois da V6';
     END;
 
-    INSERT INTO usuario (nome, email, senha_hash, perfil)
-    VALUES ('Validação Médico', 'validacao.medico@example.com', 'hash', 'MEDICO');
+    INSERT INTO usuario (nome, email, perfil)
+    VALUES ('Validação Médico', 'validacao.medico@example.com', 'MEDICO');
     RAISE NOTICE 'OK: perfil MEDICO é aceito';
 
     BEGIN
-        INSERT INTO usuario (nome, email, senha_hash, perfil)
-        VALUES ('Validação Recepção', 'validacao.recepcao@example.com', 'hash', 'RECEPCIONISTA');
+        INSERT INTO usuario (nome, email, perfil)
+        VALUES ('Validação Recepção', 'validacao.recepcao@example.com', 'RECEPCIONISTA');
         RAISE EXCEPTION 'FALHOU: perfil RECEPCIONISTA foi aceito depois da V4';
     EXCEPTION WHEN check_violation THEN
         RAISE NOTICE 'OK: perfil RECEPCIONISTA é rejeitado depois da V4 (recepcionista é o ADMIN)';
@@ -69,11 +69,43 @@ BEGIN
     END;
 
     BEGIN
-        INSERT INTO usuario (nome, email, senha_hash, perfil)
-        VALUES ('   ', 'validacao.vazio@example.com', 'hash', 'PACIENTE');
+        INSERT INTO usuario (nome, email, perfil)
+        VALUES ('   ', 'validacao.vazio@example.com', 'PACIENTE');
         RAISE EXCEPTION 'FALHOU: nome em branco foi aceito';
     EXCEPTION WHEN check_violation THEN
         RAISE NOTICE 'OK: nome em branco é rejeitado';
+    END;
+
+    -- Restrições introduzidas pela V5.
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'usuario' AND column_name = 'senha_hash') THEN
+        RAISE EXCEPTION 'FALHOU: senha_hash ainda existe após V5';
+    END IF;
+    BEGIN
+        UPDATE usuario SET master = true, ativo = false WHERE id = adm;
+        RAISE EXCEPTION 'FALHOU: Master inativo foi aceito';
+    EXCEPTION WHEN check_violation THEN RAISE NOTICE 'OK: Master inativo é rejeitado';
+    END;
+    BEGIN
+        UPDATE usuario SET master = true WHERE id = pa;
+        RAISE EXCEPTION 'FALHOU: paciente marcado Master foi aceito';
+    EXCEPTION WHEN check_violation THEN RAISE NOTICE 'OK: Master exige ADMIN';
+    END;
+    INSERT INTO convite_usuario(usuario_id,administrador_id,token_hash,criado_em,expira_em)
+    VALUES(pa,adm,repeat('a',64),now(),now()+interval '1 hour');
+    BEGIN
+        INSERT INTO convite_usuario(usuario_id,administrador_id,token_hash,criado_em,expira_em)
+        VALUES(pa,adm,repeat('b',64),now(),now()+interval '1 hour');
+        RAISE EXCEPTION 'FALHOU: dois convites pendentes foram aceitos';
+    EXCEPTION WHEN unique_violation THEN RAISE NOTICE 'OK: somente um convite pendente por usuário';
+    END;
+    UPDATE convite_usuario SET revogado=true WHERE usuario_id=pa;
+    INSERT INTO convite_usuario(usuario_id,administrador_id,token_hash,criado_em,expira_em)
+    VALUES(pa,adm,repeat('c',64),now(),now()+interval '1 hour');
+    BEGIN
+        INSERT INTO convite_usuario(usuario_id,administrador_id,token_hash,criado_em,expira_em)
+        VALUES(pb,adm,repeat('d',64),now(),now()-interval '1 hour');
+        RAISE EXCEPTION 'FALHOU: prazo de convite invertido foi aceito';
+    EXCEPTION WHEN check_violation THEN RAISE NOTICE 'OK: expiração deve ser posterior à criação';
     END;
 
     -- medico ----------------------------------------------------------------

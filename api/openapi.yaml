@@ -1,61 +1,26 @@
 openapi: 3.0.3
 info:
   title: Agenda SA API
-  version: 1.3.0
+  version: 1.5.0
   description: |
-    Contrato REST do sistema de agendamento de consultas. Os clientes são o painel web
-    (administração) e o aplicativo React + Capacitor (paciente), que consomem a mesma API.
-    Datas e horas são transmitidas em ISO-8601 com deslocamento de fuso; a exibição usa
-    `America/Sao_Paulo`.
+    Contrato atual de autenticação Google OIDC com sessão HTTP, sem senha ou JWT próprio.
+    Perfis exclusivos ADMIN, MEDICO e PACIENTE. Migração V6 preserva dados da V5.
+    Cookies HttpOnly; clientes usam credentials include. Escritas exigem o headerName/token
+    de GET /auth/csrf, inclusive logout. Token renovado após login/logout e rejeição CSRF.
+    API retorna Problem Details 401/403; não redireciona fetch para login.
+    Rejeição CSRF inclui code=csrf_invalid (403); repetição limitada a uma após renovar token.
+    Usuários desconhecidos/pendentes sem convite/inativos não recebem sessão autenticada.
+    Primeiro vínculo somente com convite válido, exceto Master provisionado por MASTER_EMAIL.
+    Falhas de navegação OAuth retornam a FRONTEND_URL com auth_error=login_failed;
+    convite inválido/expirado retorna auth_error=invite_invalid. Sem detalhes de identidade.
+    x-status implementado significa código neste checkout, não validação com Google real.
+    Rotas dos módulos médicos, agendas, agendamentos e notificações permanecem planejadas
+    neste checkout; referências ao PR #2 não significam que houve merge.
+    Datas ISO-8601 com fuso; exibição America/Sao_Paulo. Clínica única.
+    Histórico JWT substituído em historico/openapi-1.3.0.yaml. Matriz em CONFORMIDADE.md.
 
-    Cada operação traz `x-status`:
-    - `implementado`: existe no código; `x-origem` indica onde (`master` ou `PR #2`,
-      branch `feature/api-agendas`). O PR #2 foi fechado sem merge em 15/11/2026 até o
-      autor apresentar a implementação ao grupo; o código continua na branch.
-    - `planejado`: faz parte do contrato, mas ainda não foi implementado.
+    Cadastro completo para ADMIN, MEDICO e PACIENTE: CPF, nascimento, nome e email obrigatorios em novos cadastros. Telefone/endereco opcionais. CPF sem pontuacao antes de AES-GCM e HMAC; nunca em texto puro no banco. Legados e Master automatico podem permanecer incompletos ate regularizacao administrativa.
 
-    Segurança (master desde 15/11/2026): API sem estado, com JWT HS256 de 1 hora no cabeçalho
-    `Authorization: Bearer`. `POST /auth/login` é público; `/usuarios` e `/usuarios/{usuarioId}`
-    exigem `ADMIN`; as demais rotas exigem apenas um usuário autenticado. As restrições por
-    perfil citadas nas outras operações são o planejado e ainda não estão no código.
-
-    Perfis (decisão do grupo de 17/11/2026, DEC-02): `ADMIN` (faz também o papel da
-    recepcionista), `PACIENTE` e `MEDICO`. O médico é ligado ao cadastro `medico` pela
-    migração V4 do banco.
-
-    Login (V4): só pela conta Google, em `POST /auth/google`. O backend confere o token do
-    Google e devolve o JWT do próprio sistema. `POST /auth/login` (e-mail e senha) fica só no
-    perfil `dev`, como login de teste dos usuários de demonstração.
-
-    Mudanças da 1.3.0 (18/11/2026), com as decisões do DEC-02 e do DEC-03:
-    - novo `POST /auth/google` (planejado); `POST /auth/login` passa a ser só do perfil `dev`;
-    - saem `POST /auth/cadastro` (o paciente é criado no primeiro login com o Google) e
-      `POST /auth/recuperacao-senha` (RF-004 fora da versão 1);
-    - perfil `RECEPCIONISTA` sai; `MEDICO` passa a ter uso;
-    - médico ganha `email` (conta Google com que ele entra);
-    - duração das janelas de 30 a 60 minutos;
-    - regras de cancelamento e reagendamento (quem, até quando, motivo, erros e avisos);
-    - `motivo` obrigatório no cancelamento; opcional no reagendamento.
-
-    Mudanças da 1.2.0 (16/11/2026), para acompanhar o master do backend:
-    - perfil `ADMINISTRADOR` volta a ser `ADMIN` (migração V3 do backend);
-    - `POST /auth/login` implementado; novo `GET /auth/me`, implementado, que devolve o
-      usuário do token (o `GET /usuarios/me` do contrato continua planejado);
-    - todo o CRUD `/usuarios`, inclusive o `POST`, exige `ADMIN`; o paciente se cadastra
-      por `/auth/cadastro` (planejado).
-
-    Mudanças da 1.1.0 (15/11/2026):
-    - clientes: painel web e aplicativo React + Capacitor (decisão do grupo, 15/11/2026);
-    - perfil `ADMIN` passa a ser `ADMINISTRADOR`; `MEDICO` e `RECEPCIONISTA` entram como reservados;
-    - CRUD `/usuarios` e `/usuarios/{id}` descrito como implementado; ele substitui a antiga
-      rota de listagem de pacientes;
-    - paginação segue o padrão do código: parâmetros `page`, `size`, `sort` e corpo
-      `content`, `page`, `size`, `totalElements`, `totalPages`;
-    - erros seguem o ProblemDetail do Spring (`type`, `title`, `status`, `detail`, `instance`)
-      com a lista `erros` (`campo`, `mensagem`) nas validações;
-    - 400 para formato e validação de campos; 422 para regra de intervalo ou de agenda violada;
-    - rotas de agenda conforme o PR #2: novo `GET /medicos/{medicoId}/bloqueios`, janelas
-      sem `id` na resposta, 409 para médico inativo ou consultas no período bloqueado.
 servers:
   - url: http://localhost:8080/api/v1
     description: Desenvolvimento local
@@ -68,81 +33,73 @@ tags:
   - name: Notificações
 
 paths:
-  /auth/login:
-    post:
-      tags: [Autenticação]
-      summary: Login de teste com e-mail e senha (perfil dev)
-      description: |
-        Devolve um JWT válido por 1 hora (`expiresIn` em segundos) e o usuário. E-mail
-        inexistente, senha errada ou usuário inativo devolvem o mesmo 401. Resposta sem cache.
-
-        Decisão de 17/11/2026: esta rota passa a existir só no perfil `dev`, para os usuários
-        de demonstração (senha `Demo@1234`). No ambiente publicado o login é por
-        `POST /auth/google`. Hoje ela ainda está ativa em todos os perfis.
-      operationId: autenticar
+  /oauth2/authorization/google:
+    servers: [ { url: 'http://localhost:8080' } ]
+    get:
+      tags: [ Autenticação ]
+      summary: Iniciar login Google por navegação completa
       x-status: implementado
-      x-origem: master
       security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '302': { description: Redireciona ao Google com state e nonce }
+  /login/oauth2/code/google:
+    servers: [ { url: 'http://localhost:8080' } ]
+    get:
+      tags: [ Autenticação ]
+      summary: Callback OIDC gerenciado pelo Spring Security
+      x-status: implementado
+      security: []
+      responses:
+        '302': { description: 'Sucesso para FRONTEND_URL; falha para FRONTEND_URL?auth_error=login_failed' }
+  /auth/status:
+    get:
+      tags: [ Autenticação ]
+      summary: Consultar estado da sessão
+      x-status: implementado
+      security: []
       responses:
         '200':
-          description: Autenticação realizada
+          description: Estado sem cache
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenResponse'
-        '400':
-          $ref: '#/components/responses/DadosInvalidos'
-        '401':
-          $ref: '#/components/responses/NaoAutorizado'
-
-  /auth/google:
+                type: object
+                required: [ autenticado ]
+                properties:
+                  autenticado: { type: boolean }
+  /auth/csrf:
+    get:
+      tags: [ Autenticação ]
+      summary: Recuperar token CSRF da sessão
+      x-status: implementado
+      security: []
+      responses:
+        '200':
+          description: Token sem cache; cria sessão se necessário
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ headerName, token ]
+                properties:
+                  headerName: { type: string, example: X-CSRF-TOKEN }
+                  token: { type: string }
+  /auth/logout:
     post:
-      tags: [Autenticação]
-      summary: Entrar com a conta Google
-      description: |
-        O cliente faz o login do Google (botão "Entrar com Google" no painel ou no app) e manda
-        o token de identidade (`idToken`) recebido. O backend confere a assinatura, o emissor,
-        a validade e o público (os IDs de cliente do projeto no Google Cloud) e procura o
-        usuário: primeiro pelo `google_id`; depois pelo e-mail, caso de quem o administrador já
-        cadastrou (médicos e administradores), gravando o `google_id`; se não achar, cria um
-        usuário `PACIENTE`. Devolve o mesmo JWT de `POST /auth/login`.
-        Token inválido, vencido ou de outro projeto, e usuário inativo, devolvem 401.
-      operationId: autenticarComGoogle
-      x-status: planejado
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginGoogleRequest'
+      tags: [ Autenticação ]
+      summary: Invalidar sessão local e remover cookie
+      x-status: implementado
+      description: Exige CSRF. Não desconecta a conta Google do navegador.
       responses:
-        '200':
-          description: Autenticação realizada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenResponse'
-        '400':
-          $ref: '#/components/responses/DadosInvalidos'
-        '401':
-          $ref: '#/components/responses/NaoAutorizado'
-
+        '204': { description: Sessão invalidada }
+        '403': { $ref: '#/components/responses/Proibido' }
   /auth/me:
     get:
-      tags: [Autenticação]
-      summary: Consultar o usuário do token
+      tags: [ Autenticação ]
+      summary: Consultar o usuário da sessão
       description: |
         Devolve o usuário autenticado, lido do banco a cada requisição; usuário desativado
         recebe 401. Usado pelo painel para restaurar a sessão.
-        Planejado (V4): para o perfil `MEDICO`, a resposta inclui `medicoId`, o cadastro de
-        médico ligado ao usuário.
       operationId: consultarUsuarioAutenticado
       x-status: implementado
       x-origem: master
@@ -158,10 +115,10 @@ paths:
 
   /usuarios/me:
     get:
-      tags: [Usuários]
+      tags: [ Usuários ]
       summary: Consultar o próprio cadastro
       operationId: consultarMeuUsuario
-      x-status: planejado
+      x-status: implementado
       responses:
         '200':
           description: Usuário autenticado
@@ -172,11 +129,12 @@ paths:
         '401':
           $ref: '#/components/responses/NaoAutorizado'
     patch:
-      tags: [Usuários]
+      tags: [ Usuários ]
       summary: Atualizar o próprio cadastro
-      description: O usuário altera apenas nome e e-mail; perfil e situação ficam com o administrador.
+      description: Atualiza somente nome e contato proprio. CPF/nascimento/email/perfil/estado nao sao aceitos,
+        inclusive para ADMIN.
       operationId: atualizarMeuUsuario
-      x-status: planejado
+      x-status: implementado
       requestBody:
         required: true
         content:
@@ -199,15 +157,12 @@ paths:
 
   /usuarios:
     post:
-      tags: [Usuários]
+      tags: [ Usuários ]
       summary: Criar usuário
       description: |
-        Cria um usuário ativo com qualquer perfil. Restrito a `ADMIN`; o paciente também é
-        criado sozinho no primeiro login com o Google.
-        Nome e e-mail têm espaços das extremidades removidos; o e-mail é salvo em minúsculas e
-        é único sem diferenciar maiúsculas, inclusive entre inativos. A senha é guardada com BCrypt.
-        Planejado (V4): a senha passa a ser opcional, porque a pessoa entra com a conta Google do
-        e-mail cadastrado. Médico se cadastra por `POST /medicos`, que cria o usuário `MEDICO`.
+        ADMIN cria cadastro ativo administrativamente e pendente de ativação por convite.
+        Nome até 120 e e-mail até 254 caracteres; e-mail normalizado e único inclusive entre inativos.
+        Sem senha, googleSub ou cadastro público. Convite é operação separada.
       operationId: criarUsuario
       x-status: implementado
       x-origem: master
@@ -243,7 +198,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problema'
     get:
-      tags: [Usuários]
+      tags: [ Usuários ]
       summary: Listar usuários
       description: |
         Lista paginada de todos os perfis, inclusive inativos. Restrito a `ADMIN`.
@@ -294,7 +249,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/UsuarioId'
     get:
-      tags: [Usuários]
+      tags: [ Usuários ]
       summary: Consultar usuário
       description: Restrito a `ADMIN`.
       operationId: consultarUsuario
@@ -316,11 +271,13 @@ paths:
         '404':
           $ref: '#/components/responses/NaoEncontrado'
     put:
-      tags: [Usuários]
+      tags: [ Usuários ]
       summary: Atualizar usuário
       description: |
-        Substitui nome, e-mail, perfil e situação. A senha é opcional: ausente ou `null`
-        mantém a atual. `ativo: true` reativa um usuário. Restrito a `ADMIN`.
+        Substitui nome, email, perfil e ativo. ADMIN + CSRF. Sem senha.
+        Master não pode ser desativado nem mudar email/perfil. Próprio perfil é protegido.
+        E-mail vinculado ao Google não pode mudar; mudança de e-mail pendente revoga convites.
+        Conflitos protegidos retornam 409. Reativar não dispensa convite.
       operationId: atualizarUsuario
       x-status: implementado
       x-origem: master
@@ -348,7 +305,7 @@ paths:
         '409':
           $ref: '#/components/responses/Conflito'
     delete:
-      tags: [Usuários]
+      tags: [ Usuários ]
       summary: Desativar usuário
       description: |
         Desativação lógica; preserva agendamentos e histórico. Retorna 204 também quando o
@@ -368,9 +325,68 @@ paths:
         '404':
           $ref: '#/components/responses/NaoEncontrado'
 
+  /usuarios/{usuarioId}/convites:
+    parameters:
+      - $ref: '#/components/parameters/UsuarioId'
+    post:
+      tags: [ Usuários ]
+      summary: Emitir convite para usuário pendente
+      description: ADMIN + CSRF; sem corpo. Revoga anteriores; bloqueado/Master/vinculado retorna 409.
+      x-status: implementado
+      responses:
+        '201':
+          description: Convite com link de uso único; não registrar em logs
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConviteResponse' }
+        '403': { $ref: '#/components/responses/Proibido' }
+        '409': { $ref: '#/components/responses/Conflito' }
+    get:
+      tags: [ Usuários ]
+      summary: Listar convites do usuário
+      description: Restrito a ADMIN; tokens originais não são recuperáveis.
+      x-status: implementado
+      responses:
+        '200':
+          description: Lista de convites, link null
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ConviteResponse' }
+  /usuarios/{usuarioId}/convites/{conviteId}:
+    parameters:
+      - $ref: '#/components/parameters/UsuarioId'
+      - name: conviteId
+        in: path
+        required: true
+        schema: { type: integer, format: int64 }
+    delete:
+      tags: [ Usuários ]
+      summary: Revogar convite
+      description: ADMIN + CSRF; vínculo inválido ou convite usado retorna 409.
+      x-status: implementado
+      responses:
+        '204': { description: Convite revogado }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /convite/{token}:
+    servers: [ { url: 'http://localhost:8080' } ]
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [ Autenticação ]
+      summary: Abrir convite em navegação completa
+      x-status: implementado
+      security: []
+      responses:
+        '302': { description: 'Google ou FRONTEND_URL?auth_error=invite_invalid; no-store e no-referrer' }
+
   /medicos:
     get:
-      tags: [Médicos]
+      tags: [ Médicos ]
       summary: Listar médicos
       operationId: listarMedicos
       x-status: planejado
@@ -395,7 +411,7 @@ paths:
         '401':
           $ref: '#/components/responses/NaoAutorizado'
     post:
-      tags: [Médicos]
+      tags: [ Médicos ]
       summary: Cadastrar médico
       description: |
         Requer perfil `ADMIN`. CRM e UF juntos são únicos. O `email` é a conta Google com que o
@@ -427,7 +443,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/MedicoId'
     get:
-      tags: [Médicos]
+      tags: [ Médicos ]
       summary: Consultar médico
       operationId: consultarMedico
       x-status: planejado
@@ -441,7 +457,7 @@ paths:
         '404':
           $ref: '#/components/responses/NaoEncontrado'
     patch:
-      tags: [Médicos]
+      tags: [ Médicos ]
       summary: Atualizar ou desativar médico
       description: Requer perfil `ADMIN`. A propriedade `ativo` faz a desativação lógica.
       operationId: atualizarMedico
@@ -472,12 +488,12 @@ paths:
     parameters:
       - $ref: '#/components/parameters/MedicoId'
     get:
-      tags: [Agendas]
+      tags: [ Agendas ]
       summary: Consultar agenda semanal do médico
       description: Requer usuário autenticado. Retorna só as janelas ativas, por dia e hora de início.
       operationId: consultarAgendaMedico
-      x-status: implementado
-      x-origem: PR #2
+      x-status: planejado
+      x-origem: PR #2 (fora deste checkout)
       responses:
         '200':
           description: Agenda semanal
@@ -492,7 +508,7 @@ paths:
         '404':
           $ref: '#/components/responses/NaoEncontrado'
     put:
-      tags: [Agendas]
+      tags: [ Agendas ]
       summary: Substituir agenda semanal do médico
       description: |
         Requer perfil `ADMIN`. A lista enviada passa a ser a agenda ativa completa;
@@ -500,8 +516,8 @@ paths:
         (adjacentes são aceitas) e cada janela precisa comportar ao menos uma consulta.
         Consultas já marcadas são mantidas.
       operationId: substituirAgendaMedico
-      x-status: implementado
-      x-origem: PR #2
+      x-status: planejado
+      x-origem: PR #2 (fora deste checkout)
       requestBody:
         required: true
         content:
@@ -536,12 +552,12 @@ paths:
     parameters:
       - $ref: '#/components/parameters/MedicoId'
     get:
-      tags: [Agendas]
+      tags: [ Agendas ]
       summary: Listar bloqueios ativos do médico
       description: Requer perfil `ADMIN`. Ordenados pelo início.
       operationId: listarBloqueiosAgenda
-      x-status: implementado
-      x-origem: PR #2
+      x-status: planejado
+      x-origem: PR #2 (fora deste checkout)
       responses:
         '200':
           description: Bloqueios ativos
@@ -560,14 +576,14 @@ paths:
         '404':
           $ref: '#/components/responses/NaoEncontrado'
     post:
-      tags: [Agendas]
+      tags: [ Agendas ]
       summary: Criar bloqueio de agenda
       description: |
         Requer perfil `ADMIN`. Não cancela consultas: se houver consulta `AGENDADA`
         no período, o bloqueio é recusado com 409.
       operationId: criarBloqueioAgenda
-      x-status: implementado
-      x-origem: PR #2
+      x-status: planejado
+      x-origem: PR #2 (fora deste checkout)
       requestBody:
         required: true
         content:
@@ -609,14 +625,14 @@ paths:
           format: int64
           minimum: 1
     delete:
-      tags: [Agendas]
+      tags: [ Agendas ]
       summary: Desativar bloqueio de agenda
       description: |
         Requer perfil `ADMIN`. Exclusão lógica, para manter rastreabilidade;
         repetir a chamada num bloqueio existente também retorna 204.
       operationId: desativarBloqueioAgenda
-      x-status: implementado
-      x-origem: PR #2
+      x-status: planejado
+      x-origem: PR #2 (fora deste checkout)
       responses:
         '204':
           description: Bloqueio desativado
@@ -641,7 +657,7 @@ paths:
           format: date
           example: '2026-11-17'
     get:
-      tags: [Agendas]
+      tags: [ Agendas ]
       summary: Consultar horários disponíveis
       description: |
         Requer usuário autenticado. Gera os horários pela duração de cada janela e retira os
@@ -649,8 +665,8 @@ paths:
         Médico inativo ou data passada retornam lista vazia. O resultado é uma fotografia: a
         confirmação do agendamento revalida o horário.
       operationId: consultarHorariosDisponiveis
-      x-status: implementado
-      x-origem: PR #2
+      x-status: planejado
+      x-origem: PR #2 (fora deste checkout)
       responses:
         '200':
           description: Horários livres
@@ -669,7 +685,7 @@ paths:
 
   /agendamentos:
     post:
-      tags: [Agendamentos]
+      tags: [ Agendamentos ]
       summary: Criar agendamento
       operationId: criarAgendamento
       x-status: planejado
@@ -701,7 +717,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problema'
     get:
-      tags: [Agendamentos]
+      tags: [ Agendamentos ]
       summary: Listar agendamentos para administração
       description: Requer perfil `ADMIN`.
       operationId: listarAgendamentos
@@ -745,7 +761,7 @@ paths:
 
   /agendamentos/me:
     get:
-      tags: [Agendamentos]
+      tags: [ Agendamentos ]
       summary: Listar os próprios agendamentos
       description: |
         Paciente: as próprias consultas. Médico: as consultas da própria agenda (do médico ligado
@@ -773,7 +789,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/AgendamentoId'
     get:
-      tags: [Agendamentos]
+      tags: [ Agendamentos ]
       summary: Consultar agendamento
       description: |
         Paciente acessa apenas o próprio registro; médico, as consultas da própria agenda;
@@ -794,7 +810,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/AgendamentoId'
     patch:
-      tags: [Agendamentos]
+      tags: [ Agendamentos ]
       summary: Reagendar consulta
       description: |
         Regras do DEC-03 (17/11/2026):
@@ -837,7 +853,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/AgendamentoId'
     patch:
-      tags: [Agendamentos]
+      tags: [ Agendamentos ]
       summary: Cancelar consulta
       description: |
         Regras do DEC-03 (17/11/2026):
@@ -878,7 +894,7 @@ paths:
 
   /notificacoes/me:
     get:
-      tags: [Notificações]
+      tags: [ Notificações ]
       summary: Listar as próprias notificações
       description: |
         Caixa de entrada do app e do painel: as notificações do canal `SISTEMA` do usuário
@@ -912,7 +928,7 @@ paths:
           type: integer
           format: int64
     patch:
-      tags: [Notificações]
+      tags: [ Notificações ]
       summary: Marcar notificação como lida
       operationId: marcarNotificacaoComoLida
       x-status: planejado
@@ -921,14 +937,52 @@ paths:
           description: Notificação marcada como lida
         '404':
           $ref: '#/components/responses/NaoEncontrado'
+  /usuarios/{usuarioId}/dados-pessoais:
+    parameters:
+      - $ref: "#/components/parameters/UsuarioId"
+    get:
+      tags:
+        - Usuários
+      summary: Consultar dados pessoais (ADMIN)
+      description: ADMIN consulta qualquer registro, inclusive o proprio. Outros perfis recebem 403.
+      x-status: implementado
+      responses:
+        "200":
+          description: Dados pessoais, Cache-Control no-store; campos legados ausentes sao nulos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DadosPessoaisResponse"
+        "401":
+          $ref: "#/components/responses/NaoAutorizado"
+        "403":
+          $ref: "#/components/responses/Proibido"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+  /usuarios/me/dados-pessoais:
+    get:
+      tags:
+        - Usuários
+      summary: Consultar dados pessoais proprios
+      description: Proprietario identificado pelo sub Google, nunca por parametro do cliente.
+      x-status: implementado
+      responses:
+        "200":
+          description: Dados pessoais, Cache-Control no-store; campos legados ausentes sao nulos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DadosPessoaisResponse"
+        "401":
+          $ref: "#/components/responses/NaoAutorizado"
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: Planejado. Hoje o backend usa a configuração padrão do Spring Security.
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+      description: Cookie HttpOnly estabelecido pelo Spring; nunca manipulado pelo JavaScript.
 
   parameters:
     Page:
@@ -1014,22 +1068,22 @@ components:
   schemas:
     Perfil:
       type: string
-      enum: [ADMIN, PACIENTE, MEDICO]
+      enum: [ ADMIN, PACIENTE, MEDICO ]
       description: |
         `ADMIN` faz também o papel da recepcionista. `MEDICO` é ligado a um cadastro de médico
         (V4). `RECEPCIONISTA` saiu na V4.
     StatusAgendamento:
       type: string
-      enum: [AGENDADA, CANCELADA, CONCLUIDA]
+      enum: [ AGENDADA, CANCELADA, CONCLUIDA ]
     TipoNotificacao:
       type: string
-      enum: [CONFIRMACAO, LEMBRETE, CANCELAMENTO, ALTERACAO]
+      enum: [ CONFIRMACAO, LEMBRETE, CANCELAMENTO, ALTERACAO ]
     CanalNotificacao:
       type: string
-      enum: [SISTEMA, EMAIL]
+      enum: [ SISTEMA, EMAIL ]
     StatusNotificacao:
       type: string
-      enum: [PENDENTE, ENVIADA, FALHA]
+      enum: [ PENDENTE, ENVIADA, FALHA ]
 
     Nome:
       type: string
@@ -1041,110 +1095,102 @@ components:
       format: email
       maxLength: 254
       description: Espaços das extremidades são removidos e o valor é salvo em minúsculas.
-    Senha:
-      type: string
-      format: password
-      minLength: 8
-      maxLength: 72
-      writeOnly: true
-      description: De 8 a 72 caracteres e no máximo 72 bytes UTF-8; não é aparada nem pode ser só espaços.
-
     CriarUsuarioRequest:
       type: object
-      required: [nome, email, senha, perfil]
+      required:
+        - nome
+        - email
+        - perfil
+        - dadosPessoais
       properties:
         nome:
           $ref: '#/components/schemas/Nome'
         email:
           $ref: '#/components/schemas/Email'
-        senha:
-          $ref: '#/components/schemas/Senha'
         perfil:
           $ref: '#/components/schemas/Perfil'
+        dadosPessoais:
+          $ref: "#/components/schemas/DadosPessoaisRequest"
       example:
         nome: Ana Silva
         email: ana@example.com
-        senha: minhaSenha123
         perfil: PACIENTE
+        dadosPessoais:
+          cpf: "52998224725"
+          dataNascimento: 1990-05-20
 
     AtualizarUsuarioRequest:
       type: object
-      required: [nome, email, perfil, ativo]
+      required: [ nome, email, perfil, ativo ]
       properties:
         nome:
           $ref: '#/components/schemas/Nome'
         email:
           $ref: '#/components/schemas/Email'
-        senha:
-          type: string
-          format: password
-          minLength: 8
-          maxLength: 72
-          writeOnly: true
-          nullable: true
-          description: Opcional; ausente ou `null` mantém a senha atual. Vazia é inválida; mesmas regras de `Senha`.
         perfil:
           $ref: '#/components/schemas/Perfil'
         ativo:
           type: boolean
           description: '`true` reativa um usuário inativo.'
+        dadosPessoais:
+          $ref: "#/components/schemas/DadosPessoaisRequest"
       example:
         nome: Ana Silva
         email: ana@example.com
         perfil: PACIENTE
         ativo: true
+      description: dadosPessoais omitido preserva os valores. Se enviado, substitui o conjunto completo; CPF e nascimento
+        obrigatorios, contatos nulos/vazios removidos. ADMIN corrige qualquer registro. Legados podem
+        atualizar dados comuns sem regularizacao imediata.
 
     AtualizarMeuUsuarioRequest:
       type: object
       additionalProperties: false
-      minProperties: 1
+      required:
+        - nome
       properties:
         nome:
-          $ref: '#/components/schemas/Nome'
-        email:
-          $ref: '#/components/schemas/Email'
+          $ref: "#/components/schemas/Nome"
+        telefone:
+          type: string
+          nullable: true
+          maxLength: 40
+          description: Omitido preserva, nulo/vazio remove. Internacional com +.
+        endereco:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Omitido preserva, nulo/vazio remove.
+      description: Todos os perfis atualizam somente nome e contato. CPF, nascimento, email, perfil e estado sao
+        rejeitados; ADMIN usa PUT administrativo para corrigir identidade.
 
-    LoginGoogleRequest:
+    ConviteResponse:
       type: object
-      additionalProperties: false
-      required: [idToken]
+      required: [ id, usuarioId, administradorId, criadoEm, expiraEm, status, link ]
       properties:
-        idToken:
-          type: string
-          description: Token de identidade (JWT) que o Google devolve ao cliente no login.
-
-    LoginRequest:
-      type: object
-      additionalProperties: false
-      required: [email, senha]
-      properties:
-        email:
-          type: string
-          format: email
-        senha:
-          type: string
-          format: password
-
-    TokenResponse:
-      type: object
-      required: [accessToken, tokenType, expiresIn, usuario]
-      properties:
-        accessToken:
-          type: string
-        tokenType:
-          type: string
-          example: Bearer
-        expiresIn:
-          type: integer
-          description: Validade do token em segundos.
-          example: 3600
-        usuario:
-          $ref: '#/components/schemas/UsuarioResponse'
+        id: { type: integer, format: int64 }
+        usuarioId: { type: integer, format: int64 }
+        administradorId: { type: integer, format: int64 }
+        criadoEm: { type: string, format: date-time }
+        expiraEm: { type: string, format: date-time }
+        status: { type: string, enum: [ PENDENTE, EXPIRADO, UTILIZADO, REVOGADO ] }
+        link: { type: string, nullable: true, description: 'Somente emissão retorna link; consulta retorna null' }
 
     UsuarioResponse:
       type: object
       description: Senha e hash nunca fazem parte da resposta. As datas são geradas pelo banco.
-      required: [id, nome, email, perfil, ativo, criadoEm, atualizadoEm]
+      required:
+        - id
+        - nome
+        - email
+        - perfil
+        - ativo
+        - criadoEm
+        - atualizadoEm
+        - statusCadastro
+        - master
+        - ativadoEm
+        - cadastroCompleto
       properties:
         id:
           type: integer
@@ -1165,10 +1211,18 @@ components:
           type: string
           format: date-time
 
+        statusCadastro: { type: string, enum: [ PENDENTE, ATIVADO ] }
+        master: { type: boolean }
+        ativadoEm: { type: string, format: date-time, nullable: true }
+        cadastroCompleto:
+          type: boolean
+          description: Presenca dos dados pessoais obrigatorios, independente de perfil, ativo e ativacao Google. Nao
+            expor dados pessoais em listagens.
+
     MedicoRequest:
       type: object
       additionalProperties: false
-      required: [nome, email, crm, ufCrm, especialidade]
+      required: [ nome, email, crm, ufCrm, especialidade ]
       properties:
         nome:
           $ref: '#/components/schemas/Nome'
@@ -1213,7 +1267,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/MedicoRequest'
         - type: object
-          required: [id, ativo, criadoEm, atualizadoEm]
+          required: [ id, ativo, criadoEm, atualizadoEm ]
           properties:
             id:
               type: integer
@@ -1236,7 +1290,7 @@ components:
     AgendaItem:
       type: object
       additionalProperties: false
-      required: [diaSemana, horaInicio, horaFim, duracaoMinutos]
+      required: [ diaSemana, horaInicio, horaFim, duracaoMinutos ]
       properties:
         diaSemana:
           type: integer
@@ -1257,7 +1311,7 @@ components:
     AgendaMedicoRequest:
       type: object
       additionalProperties: false
-      required: [janelas]
+      required: [ janelas ]
       properties:
         janelas:
           type: array
@@ -1273,7 +1327,7 @@ components:
 
     AgendaMedicoResponse:
       type: object
-      required: [medicoId, janelas]
+      required: [ medicoId, janelas ]
       properties:
         medicoId:
           type: integer
@@ -1286,7 +1340,7 @@ components:
     BloqueioAgendaRequest:
       type: object
       additionalProperties: false
-      required: [inicio, fim, motivo]
+      required: [ inicio, fim, motivo ]
       properties:
         inicio:
           type: string
@@ -1306,7 +1360,7 @@ components:
 
     BloqueioAgendaResponse:
       type: object
-      required: [id, medicoId, inicio, fim, motivo, ativo]
+      required: [ id, medicoId, inicio, fim, motivo, ativo ]
       properties:
         id:
           type: integer
@@ -1327,7 +1381,7 @@ components:
 
     HorarioDisponivel:
       type: object
-      required: [inicio, fim]
+      required: [ inicio, fim ]
       properties:
         inicio:
           type: string
@@ -1339,7 +1393,7 @@ components:
     CriarAgendamentoRequest:
       type: object
       additionalProperties: false
-      required: [medicoId, inicio]
+      required: [ medicoId, inicio ]
       properties:
         medicoId:
           type: integer
@@ -1355,7 +1409,7 @@ components:
     ReagendarAgendamentoRequest:
       type: object
       additionalProperties: false
-      required: [inicio]
+      required: [ inicio ]
       properties:
         inicio:
           type: string
@@ -1368,7 +1422,7 @@ components:
     CancelarAgendamentoRequest:
       type: object
       additionalProperties: false
-      required: [motivo]
+      required: [ motivo ]
       properties:
         motivo:
           type: string
@@ -1378,7 +1432,7 @@ components:
 
     AgendamentoResponse:
       type: object
-      required: [id, paciente, medico, inicio, fim, status, criadoEm, atualizadoEm]
+      required: [ id, paciente, medico, inicio, fim, status, criadoEm, atualizadoEm ]
       properties:
         id:
           type: integer
@@ -1411,7 +1465,7 @@ components:
 
     UsuarioResumo:
       type: object
-      required: [id, nome]
+      required: [ id, nome ]
       properties:
         id:
           type: integer
@@ -1421,7 +1475,7 @@ components:
 
     MedicoResumo:
       type: object
-      required: [id, nome, especialidade]
+      required: [ id, nome, especialidade ]
       properties:
         id:
           type: integer
@@ -1433,7 +1487,7 @@ components:
 
     NotificacaoResponse:
       type: object
-      required: [id, agendamentoId, tipo, canal, status, mensagem, criadaEm]
+      required: [ id, agendamentoId, tipo, canal, status, mensagem, criadaEm ]
       properties:
         id:
           type: integer
@@ -1464,7 +1518,7 @@ components:
     Pagina:
       type: object
       description: Formato de página do código (`UsuarioPageResponse`), adotado em todas as listagens.
-      required: [page, size, totalElements, totalPages]
+      required: [ page, size, totalElements, totalPages ]
       properties:
         page:
           type: integer
@@ -1480,7 +1534,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/Pagina'
         - type: object
-          required: [content]
+          required: [ content ]
           properties:
             content:
               type: array
@@ -1491,7 +1545,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/Pagina'
         - type: object
-          required: [content]
+          required: [ content ]
           properties:
             content:
               type: array
@@ -1502,7 +1556,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/Pagina'
         - type: object
-          required: [content]
+          required: [ content ]
           properties:
             content:
               type: array
@@ -1513,7 +1567,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/Pagina'
         - type: object
-          required: [content]
+          required: [ content ]
           properties:
             content:
               type: array
@@ -1522,7 +1576,7 @@ components:
 
     ErroCampo:
       type: object
-      required: [campo, mensagem]
+      required: [ campo, mensagem ]
       properties:
         campo:
           type: string
@@ -1532,7 +1586,7 @@ components:
     Problema:
       type: object
       description: ProblemDetail (RFC 9457) gerado pelo Spring. Os valores enviados não são repetidos na resposta.
-      required: [type, title, status]
+      required: [ type, title, status ]
       properties:
         type:
           type: string
@@ -1547,6 +1601,9 @@ components:
         instance:
           type: string
           format: uri-reference
+        code:
+          type: string
+          description: csrf_invalid somente para rejeição pelo filtro CSRF
         erros:
           type: array
           description: Presente nos erros de validação de campos e parâmetros.
@@ -1561,6 +1618,68 @@ components:
         erros:
           - campo: email
             mensagem: deve ser um endereço de e-mail bem formado
+    DadosPessoaisRequest:
+      type: object
+      required:
+        - cpf
+        - dataNascimento
+      properties:
+        cpf:
+          type: string
+          pattern: ^(?:[0-9]{11}|[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2})$
+          description: CPF com verificadores validos. Unico entre todos os perfis, inclusive inativos; normalizado para
+            11 digitos antes de AES-GCM e HMAC.
+        dataNascimento:
+          type: string
+          format: date
+          description: Data valida, ano >= 1, nao futura em America/Sao_Paulo. Sem limite de idade; interface confirma
+            datas anteriores a 120 anos.
+        telefone:
+          type: string
+          nullable: true
+          maxLength: 40
+          description: Opcional. Internacional com + e codigo do pais; normalizado para E.164.
+        endereco:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Opcional, texto aparado.
+    DadosPessoaisResponse:
+      type: object
+      required:
+        - id
+        - nome
+        - email
+        - cpf
+        - dataNascimento
+        - telefone
+        - endereco
+        - cadastroCompleto
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        cpf:
+          type: string
+          nullable: true
+          description: 11 digitos; apenas consulta especifica autorizada.
+        dataNascimento:
+          type: string
+          format: date
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        endereco:
+          type: string
+          nullable: true
+        cadastroCompleto:
+          type: boolean
 
 security:
-  - bearerAuth: []
+  - sessionCookie: []
