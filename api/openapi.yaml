@@ -9,9 +9,10 @@ info:
     `America/Sao_Paulo`.
 
     Cada operação traz `x-status`:
-    - `implementado`: existe no código; `x-origem` indica onde (`master` ou `PR #2`,
-      branch `feature/api-agendas`). O PR #2 foi fechado sem merge em 15/11/2026 até o
-      autor apresentar a implementação ao grupo; o código continua na branch.
+    - `implementado`: existe no código; `x-origem` indica onde. A origem `local` significa
+      implementação testada no ambiente local, ainda sem PR/merge confirmado; não indica
+      disponibilidade na `master` nem no ambiente publicado. As referências antigas ao
+      PR #2 da agenda descrevem a implementação anterior, recriada localmente em 22/11/2026.
     - `planejado`: faz parte do contrato, mas ainda não foi implementado.
 
     Segurança (master desde 15/11/2026): API sem estado, com JWT HS256 de 1 hora no cabeçalho
@@ -391,7 +392,9 @@ paths:
       tags: [Médicos]
       summary: Listar médicos
       operationId: listarMedicos
-      x-status: planejado
+      x-status: implementado
+      x-origem: local
+      x-validado-em: '2026-11-22'
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
@@ -422,7 +425,9 @@ paths:
         médico vai entrar: a operação cria o usuário `MEDICO` com esse e-mail e liga ao cadastro
         do médico (`medico.usuario_id`, V4). E-mail já usado devolve 409.
       operationId: cadastrarMedico
-      x-status: planejado
+      x-status: implementado
+      x-origem: local
+      x-validado-em: '2026-11-22'
       requestBody:
         required: true
         content:
@@ -452,7 +457,9 @@ paths:
       tags: [Médicos]
       summary: Consultar médico
       operationId: consultarMedico
-      x-status: planejado
+      x-status: implementado
+      x-origem: local
+      x-validado-em: '2026-11-22'
       responses:
         '200':
           description: Médico encontrado
@@ -471,7 +478,9 @@ paths:
       summary: Atualizar ou desativar médico
       description: Requer perfil `ADMIN`. A propriedade `ativo` faz a desativação lógica.
       operationId: atualizarMedico
-      x-status: planejado
+      x-status: implementado
+      x-origem: local
+      x-validado-em: '2026-11-22'
       requestBody:
         required: true
         content:
@@ -505,7 +514,8 @@ paths:
       description: Requer usuário autenticado. Retorna só as janelas ativas, por dia e hora de início.
       operationId: consultarAgendaMedico
       x-status: implementado
-      x-origem: PR #2
+      x-origem: local
+      x-validado-em: '2026-11-22'
       responses:
         '200':
           description: Agenda semanal
@@ -529,7 +539,8 @@ paths:
         Consultas já marcadas são mantidas.
       operationId: substituirAgendaMedico
       x-status: implementado
-      x-origem: PR #2
+      x-origem: local
+      x-validado-em: '2026-11-22'
       requestBody:
         required: true
         content:
@@ -569,7 +580,8 @@ paths:
       description: Requer perfil `ADMIN`. Ordenados pelo início.
       operationId: listarBloqueiosAgenda
       x-status: implementado
-      x-origem: PR #2
+      x-origem: local
+      x-validado-em: '2026-11-22'
       responses:
         '200':
           description: Bloqueios ativos
@@ -595,7 +607,8 @@ paths:
         no período, o bloqueio é recusado com 409.
       operationId: criarBloqueioAgenda
       x-status: implementado
-      x-origem: PR #2
+      x-origem: local
+      x-validado-em: '2026-11-22'
       requestBody:
         required: true
         content:
@@ -644,7 +657,8 @@ paths:
         repetir a chamada num bloqueio existente também retorna 204.
       operationId: desativarBloqueioAgenda
       x-status: implementado
-      x-origem: PR #2
+      x-origem: local
+      x-validado-em: '2026-11-22'
       responses:
         '204':
           description: Bloqueio desativado
@@ -678,7 +692,8 @@ paths:
         confirmação do agendamento revalida o horário.
       operationId: consultarHorariosDisponiveis
       x-status: implementado
-      x-origem: PR #2
+      x-origem: local
+      x-validado-em: '2026-11-22'
       responses:
         '200':
           description: Horários livres
