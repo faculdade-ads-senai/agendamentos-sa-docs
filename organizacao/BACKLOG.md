@@ -12,7 +12,7 @@ Pendências externas: configuração de cliente Google Calendar, consentimento r
 
 Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as listas de verificação deste arquivo; quando os dois divergirem, atualize os dois no mesmo dia.
 
-- Situação conferida em 18/11/2026: decisões do DEC-02 e do DEC-03 (fechadas em sala em 17/11), V4 do banco no PR #1 do backend e contrato 1.3.0. A coluna “Lista” diz onde cada cartão deve ficar.
+- Situação conferida em 18/11/2026: decisões do DEC-02 e do DEC-03 (fechadas em sala em 17/11), V4 do banco na master do backend (PR #1, merge em 18/11) e contrato 1.4.0, com as decisões do API-01. A coluna “Lista” diz onde cada cartão deve ficar.
 - Prazos são **proposta** até o grupo aprovar.
 - Entrega da SA (Desenvolvimento de Sistemas Web, AVA): vence em **08/12/2026 às 00:00**. Enviar até **07/12 às 23:59**. Só há **1 tentativa** de envio.
 - Clientes: painel web do administrador (React + Vite) e app do paciente (React + Capacitor, Android), com o mesmo backend Spring Boot e o mesmo contrato. Login só pela conta Google.
@@ -45,6 +45,10 @@ Não existe lista de “bloqueado”: se um cartão travar esperando algo, ele f
 3. Quando o grupo fechar, o Luís escreve a resposta na descrição, em **Decidido**, marca os itens e move o cartão para Concluído.
 
 Marcar o item sem escrever a resposta não vale como decisão. Foi o que confundiu o DEC-02 em 17/11: as caixas diziam “aprovar a proposta”, e os comentários mudavam a proposta.
+
+**Contrato da API**
+
+Rotas, campos e códigos de erro ficam só no api/openapi.yaml; quando usar cada código está na tabela “Códigos de erro”, no topo. Os cartões não repetem códigos: descrevem o caso e apontam para a tabela. Se um cartão e o contrato discordarem, vale o contrato, e quem achou avisa o Luís para corrigir o cartão.
 
 Regras que continuam valendo:
 
@@ -94,8 +98,8 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 | Período | Foco | Cartões com prazo no período |
 |---|---|---|
 | Antes de 16/11 | Decisão dos clientes. | DEC-01 (15/11) |
-| Semana 1 (16–22/11) | Fechar decisões (feito em 17/11), V4, Google Cloud e Brevo, requisitos, modelo e contrato; banco de produção; base do backend, do painel e do app; login com Google. | DOC-02 (16/11), DEC-02 (18/11), DEC-03 (18/11), REQ-01 (18/11), DB-04 (19/11), BE-04 (19/11), DEC-04 (20/11), DB-01 (20/11), DB-02 (20/11), DB-03 (20/11), API-01 (20/11), BE-01 (20/11), INF-01 (20/11), FE-01W (20/11), BE-02 (22/11), FE-01M (22/11) |
-| Semana 2 (23–29/11) | Médicos, agendamentos e publicação do backend; login com Google nos clientes. | BE-03 (25/11), FE-02 (25/11), BE-05 (28/11), BE-08 (29/11) |
+| Semana 1 (16–22/11) | Fechar decisões (feito em 17/11), V4, Google Cloud e Brevo, requisitos, modelo e contrato; banco de produção; base do backend, do painel e do app; login com Google. | DOC-02 (16/11), DEC-02 (18/11), DEC-03 (18/11), REQ-01 (18/11), BE-04 (19/11), DB-01 (20/11), DB-02 (20/11), DB-03 (20/11), API-01 (20/11), BE-01 (20/11), FE-01W (20/11), DEC-04 (21/11), INF-01 (21/11), BE-02 (22/11), FE-01M (22/11) |
+| Semana 2 (23–29/11) | Médicos, agendamentos e publicação do backend; login com Google nos clientes. | BE-03 (25/11), FE-02 (25/11), DB-04 (28/11), BE-05 (28/11), BE-08 (29/11) |
 | Semana 3 (30/11–06/12) | Notificações e conceito distribuído; telas do paciente, do médico e do administrador; testes, integração, aceite e documentação final. | BE-09 (01/12), BE-06 (02/12), DIST-01 (02/12), FE-03 (02/12), FE-04 (02/12), FE-07 (02/12), BE-07 (03/12), FE-05 (04/12), FE-06 (04/12), INT-01 (04/12), QA-01 (05/12), DOC-01 (06/12) |
 | Entrega (07/12) | Ensaio, apresentação e envio no AVA até 23:59. | APR-01 (07/12) |
 
@@ -103,9 +107,8 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 
 | ID | Título | Lista | Responsável | Prazo |
 |---|---|---|---|---|
-| [DEC-04](#dec-04) | Decidir a tela do médico e como a consulta vira concluída | Para o grupo decidir | Todos (Luís registra) | 20/11 |
-| [INF-01](#inf-01) | Criar o projeto no Google Cloud e a conta da Brevo | A fazer | Luís | 20/11 |
-| [BE-03](#be-03) | Implementar o cadastro de médicos | A fazer | Pierre (o Yuri passou o cartão para ele no Trello em 16/11) | 25/11 |
+| [DEC-04](#dec-04) | Decidir a tela do médico e como a consulta vira concluída | Para o grupo decidir | Todos (Luís registra) | 21/11 |
+| [INF-01](#inf-01) | Criar o projeto no Google Cloud e a conta da Brevo | A fazer | Luís | 21/11 |
 | [BE-05](#be-05) | Implementar agendamentos | A fazer | Yuri (módulo 3) | 28/11 |
 | [BE-09](#be-09) | Implementar o histórico e as listas de consultas | A fazer | Pierre (módulo 4) | 01/12 |
 | [BE-06](#be-06) | Implementar notificações: caixa de entrada, e-mail e lembrete | A fazer | Yuri (módulo 5) | 02/12 |
@@ -121,12 +124,12 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 | [QA-01](#qa-01) | Executar o roteiro de aceite da versão 1 | A fazer | Todos | 05/12 |
 | [DOC-01](#doc-01) | Atualizar a documentação final | A fazer | Luís (apoio: todos) | 06/12 |
 | [APR-01](#apr-01) | Preparar a apresentação e as respostas técnicas individuais | A fazer | Todos (coordenação: Luís) | 07/12 |
-| [DOC-02](#doc-02) | Migrar a documentação do Drive para o repositório agendamentos-sa-docs | Em andamento | Luís | 16/11 |
 | [DB-02](#db-02) | Validar as migrações no PostgreSQL | Em andamento | Luís (apoio: Yuri ou Pierre) | 20/11 |
-| [DB-04](#db-04) | Criar o banco de produção na nuvem | Em andamento | Luís | 19/11 |
+| [DB-04](#db-04) | Criar o banco de produção na nuvem | Em andamento | Luís | 28/11 |
 | [API-01](#api-01) | Revisar e congelar o contrato OpenAPI v1 | Em andamento | Luís (revisores: Yuri, Pierre e Victor) | 20/11 |
 | [BE-01](#be-01) | Completar a base do backend e o ambiente local | Em andamento | Yuri e Pierre | 20/11 |
 | [BE-02](#be-02) | Implementar o login com Google e o perfil do usuário | Em andamento | Yuri | 22/11 |
+| [BE-03](#be-03) | Implementar o cadastro de médicos | Em andamento | Pierre (o Yuri passou o cartão para ele no Trello em 16/11) | 25/11 |
 | [BE-04](#be-04) | Concluir agenda e bloqueios (branch feature/api-agendas) | Em andamento | Pierre | 19/11 |
 | [FE-01W](#fe-01w) | Estruturar a base do painel web administrativo | Em andamento | Victor | 20/11 |
 | [FE-02](#fe-02) | Implementar o login com Google no painel e no app | Em andamento | Victor | 25/11 |
@@ -136,6 +139,7 @@ Os demais cartões (base, banco, contrato, painel, integração, testes, documen
 | [DEC-02](#dec-02) | Decisões técnicas da versão 1 | Concluído | Todos (Luís registra) | 18/11 |
 | [DEC-03](#dec-03) | Regras de cancelamento e reagendamento | Concluído | Todos (Luís registra) | 18/11 |
 | [REQ-01](#req-01) | Confirmar os ajustes do documento de requisitos | Concluído | Luís | 18/11 |
+| [DOC-02](#doc-02) | Migrar a documentação do Drive para o repositório agendamentos-sa-docs | Concluído | Luís | 16/11 |
 | [DB-03](#db-03) | Carregar dados de demonstração no perfil dev | Concluído | Luís | 20/11 |
 
 ## Rastreabilidade: requisito → cartões
@@ -219,7 +223,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 #### DEC-04 — Decidir a tela do médico e como a consulta vira concluída
 
-**Lista:** Para o grupo decidir · **Responsável:** Todos (Luís registra) · **Prazo (proposta):** 20/11 · **Depende de:** — · **Etiquetas:** Decisão da equipe, Prioridade alta
+**Lista:** Para o grupo decidir · **Responsável:** Todos (Luís registra) · **Prazo (proposta):** 21/11 · **Depende de:** — · **Etiquetas:** Decisão da equipe, Prioridade alta
 
 **Pra quê.** Fechar o que sobrou do DEC-02 com a entrada do médico na versão 1.
 
@@ -258,7 +262,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 #### INF-01 — Criar o projeto no Google Cloud e a conta da Brevo
 
-**Lista:** A fazer · **Responsável:** Luís · **Prazo (proposta):** 20/11 · **Depende de:** — · **Etiquetas:** Backend, Integração, Prioridade alta
+**Lista:** A fazer · **Responsável:** Luís · **Prazo (proposta):** 21/11 · **Depende de:** — · **Etiquetas:** Backend, Integração, Prioridade alta
 
 **Módulo do enunciado:** 1 — Cadastro e autenticação
 
@@ -297,51 +301,6 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 **Links:** [banco-de-dados/AMBIENTES.md](../banco-de-dados/AMBIENTES.md) · [arquitetura/ARQUITETURA.md](../arquitetura/ARQUITETURA.md)
 
-<a id="be-03"></a>
-
-#### BE-03 — Implementar o cadastro de médicos
-
-**Lista:** A fazer · **Responsável:** Pierre (o Yuri passou o cartão para ele no Trello em 16/11) · **Prazo (proposta):** 25/11 · **Depende de:** BE-04 (merge da branch), BE-02, V4 (DB-01) · **Etiquetas:** Backend
-
-**Módulo do enunciado:** 2 — Agenda de profissionais
-
-**Pra quê.** Administrador cadastra, edita, lista e desativa médicos; paciente lista para escolher; o médico entra com o Google.
-
-**O que já se sabe**
-
-- A entidade Medico e o MedicoRepository (com lock pessimista) estão na branch feature/api-agendas; o CRUD ainda não existe. Rotas planejadas: GET e POST /medicos, GET e PATCH /medicos/{id}.
-- Desde a V4 (decisão de 17/11) o médico entra no sistema: o cadastro recebe o e-mail Google dele, cria o usuário MEDICO e liga em medico.usuario_id, na mesma transação. No primeiro login com o Google o sistema reconhece o médico pelo e-mail.
-
-**Entra:** listagem paginada com os filtros do contrato; cadastro com e-mail Google; edição; desativação lógica. **Fica de fora:** o login em si (BE-02); a tela do médico (FE-07).
-
-**Passos**
-
-- [x] Reaproveitar Medico e MedicoRepository da branch feature/api-agendas
-- [ ] Ligar a entidade Medico ao usuário (usuario_id, V4)
-- [ ] DTOs e validações: e-mail, CRM, UF com duas letras maiúsculas, especialidade
-- [ ] GET /medicos paginado com filtros
-- [ ] POST /medicos criando o usuário MEDICO com o e-mail Google, na mesma transação; GET /medicos/{id}
-- [ ] PATCH /medicos/{id}, incluindo ativar e desativar
-- [ ] Traduzir CRM/UF ou e-mail repetido em 409
-- [ ] Restringir escrita a ADMIN
-- [ ] Testes de duplicidade, validação e permissão
-- [ ] Atualizar x-status no openapi.yaml
-
-**Pronto quando**
-
-- [ ] Mesmo CRM em outra UF é aceito; mesmo CRM e UF devolve 409
-- [ ] Médico desativado continua no histórico e some da escolha do paciente
-- [ ] Paciente lista, mas não altera
-- [ ] O médico cadastrado entra com o Google e cai no perfil MEDICO
-
-**Requisitos deste cartão**
-
-- **RN-003** — Apenas administradores podem cadastrar, editar ou desativar médicos.
-- **RN-011** — A desativação de um médico deve impedir a criação de novos agendamentos para esse profissional.
-- **RF-007** — O sistema deve permitir que administradores cadastrem, editem, consultem e desativem médicos.
-
-**Links:** [api/openapi.yaml](../api/openapi.yaml) · [branch feature/api-agendas](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/tree/feature/api-agendas)
-
 <a id="be-05"></a>
 
 #### BE-05 — Implementar agendamentos
@@ -355,7 +314,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 **O que já se sabe**
 
 - Rotas planejadas: POST /agendamentos, GET /agendamentos/{id}, PATCH .../reagendamento e PATCH .../cancelamento. As listas e o histórico ficam no BE-09.
-- O banco já recusa sobreposição por médico e por paciente; o serviço traduz isso em 409. A V4 recusa cancelamento sem motivo.
+- O banco já recusa sobreposição por médico e por paciente; o serviço devolve isso como horário ocupado. A V4 recusa cancelamento sem motivo. O código de cada erro está na tabela de erros do contrato.
 - Regras do DEC-03 (17/11): paciente só nas próprias consultas e até 24 horas antes; médico só cancela, nas consultas da própria agenda; administrador faz tudo, sem prazo. Toda mudança avisa o paciente e o médico, menos quem fez. As regras de contexto estão em “Regras que ficam na aplicação” do MODELO_DADOS.md e nas rotas do openapi.yaml.
 
 **Entra:** criação com lock no médico; cancelamento e reagendamento com as regras do DEC-03; notificações PENDENTE na mesma transação. **Fica de fora:** listas e histórico (BE-09); envio das notificações (BE-06); pagamento, convênio ou prontuário.
@@ -364,11 +323,11 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 - [ ] Entidade Agendamento e repositório (o BE-09 usa a mesma)
 - [ ] POST /agendamentos: lock no médico, janela ativa, sem bloqueio, início futuro e duração da janela
-- [ ] Traduzir exclusion_violation em 409
-- [ ] GET /agendamentos/{id}: paciente dono, médico da consulta ou ADMIN; senão 404
+- [ ] Traduzir exclusion_violation em horário ocupado
+- [ ] GET /agendamentos/{id}: paciente dono, médico da consulta ou ADMIN; os outros recebem “não encontrado”
 - [ ] PATCH cancelamento: motivo obrigatório; paciente até 24 horas antes e só as próprias; médico só da própria agenda; ADMIN qualquer
 - [ ] PATCH reagendamento: paciente até 24 horas antes; ADMIN qualquer; médico não; novo horário validado na mesma transação
-- [ ] Erros: 404 consulta de outra pessoa, 409 horário ocupado, 422 passada, cancelada ou a menos de 24 horas
+- [ ] Erros pela tabela de erros do contrato e pela descrição de cada rota
 - [ ] Gravar as notificações PENDENTE (SISTEMA e EMAIL) do paciente e do médico, menos de quem fez, na mesma transação (base do DIST-01)
 - [ ] Testes de serviço para cada regra
 - [ ] Atualizar x-status no openapi.yaml
@@ -376,10 +335,11 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 **Pronto quando**
 
 - [ ] Horário fora da agenda, bloqueado ou passado é recusado
-- [ ] Dois pedidos para o mesmo horário: um 201 e um 409
+- [ ] Dois pedidos para o mesmo horário: um grava e o outro é recusado como horário ocupado
 - [ ] Paciente não vê nem altera consulta de outro paciente
-- [ ] Paciente a menos de 24 horas recebe 422; médico e administrador conseguem cancelar
-- [ ] Cancelamento sem motivo devolve 400
+- [ ] Paciente a menos de 24 horas é recusado com “fale com a clínica”; médico e administrador conseguem cancelar
+- [ ] Cancelamento sem motivo é recusado
+- [ ] Cada erro volta com o código da tabela de erros do contrato
 - [ ] Consulta cancelada continua no histórico e libera o horário
 
 **Requisitos deste cartão**
@@ -406,7 +366,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RF-030** — O sistema deve permitir que médicos cancelem consultas da própria agenda, informando o motivo.
 - **RNF-012** — O sistema deve preservar a consistência dos agendamentos em operações simultâneas.
 
-**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [api/openapi.yaml](../api/openapi.yaml)
+**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml)
 
 <a id="be-09"></a>
 
@@ -454,7 +414,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RF-023** — O sistema deve permitir a filtragem de agendamentos por período, médico ou status no painel administrativo.
 - **RF-029** — O sistema deve permitir que médicos consultem a própria agenda e as consultas marcadas com eles.
 
-**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [api/openapi.yaml](../api/openapi.yaml)
+**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml)
 
 <a id="be-06"></a>
 
@@ -502,7 +462,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RF-027** — O sistema deve notificar pacientes sobre alterações nos agendamentos.
 - **RF-028** — O sistema deve manter registros das notificações enviadas.
 
-**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [api/openapi.yaml](../api/openapi.yaml)
+**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml)
 
 <a id="dist-01"></a>
 
@@ -572,13 +532,13 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 **Passos**
 
 - [ ] Escolher como subir o PostgreSQL nos testes (Testcontainers ou banco dedicado)
-- [ ] Dois pedidos simultâneos para o mesmo médico e horário: um sucesso e um 409
+- [ ] Dois pedidos simultâneos para o mesmo médico e horário: um grava e o outro é recusado como horário ocupado
 - [ ] Paciente não ocupa duas consultas sobrepostas
 - [ ] Cancelamento libera o horário
 - [ ] Bloqueio retira o horário da disponibilidade
 - [ ] Médico inativo não recebe agendamento
-- [ ] Paciente a menos de 24 horas não cancela (422); cancelamento sem motivo é recusado
-- [ ] Testes de autenticação: 401 sem token e 403 por perfil
+- [ ] Paciente a menos de 24 horas não cancela; cancelamento sem motivo é recusado
+- [ ] Testes de autenticação: sem token e perfil sem permissão, conferindo os códigos da tabela de erros do contrato
 - [ ] Rodar todos com ./mvnw test e anexar o resultado
 
 **Pronto quando**
@@ -706,14 +666,14 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 **Passos**
 
-- [ ] Editar dados pessoais (GET e PATCH /usuarios/me)
+- [ ] Editar o nome (lê em GET /auth/me e salva em PATCH /usuarios/me; o e-mail é o da conta Google)
 - [ ] Listar médicos com filtro de especialidade
 - [ ] Ver horários disponíveis por data
 - [ ] Confirmar agendamento
 - [ ] Listar próximas consultas e histórico
-- [ ] Cancelar (com motivo) e reagendar; a menos de 24 horas, mostrar “fale com a clínica” (422)
+- [ ] Cancelar (com motivo) e reagendar; a menos de 24 horas, mostrar “fale com a clínica”
 - [ ] Caixa de entrada de notificações, com as não lidas em destaque e marcar como lida
-- [ ] Em 409, atualizar os horários e avisar que o horário foi ocupado
+- [ ] Se o horário foi ocupado por outra pessoa, atualizar os horários e avisar
 
 **Pronto quando**
 
@@ -735,7 +695,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RF-020** — O sistema deve permitir que pacientes consultem seus próximos agendamentos.
 - **RF-021** — O sistema deve permitir que pacientes visualizem o histórico de agendamentos anteriores.
 
-**Links:** [api/openapi.yaml](../api/openapi.yaml) · [arquitetura/ARQUITETURA.md](../arquitetura/ARQUITETURA.md)
+**Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml) · [arquitetura/ARQUITETURA.md](../arquitetura/ARQUITETURA.md)
 
 <a id="fe-04"></a>
 
@@ -783,7 +743,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RF-023** — O sistema deve permitir a filtragem de agendamentos por período, médico ou status no painel administrativo.
 - **RNF-008** — O painel administrativo deve apresentar interface responsiva para computadores e tablets.
 
-**Links:** [api/openapi.yaml](../api/openapi.yaml) · [frontend-agendamento](https://github.com/VictorKLing/frontend-agendamento)
+**Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml) · [frontend-agendamento](https://github.com/VictorKLing/frontend-agendamento)
 
 <a id="fe-05"></a>
 
@@ -797,16 +757,17 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 - O RNF-013 pede tratamento de falhas de comunicação com o backend.
 - Os erros da API vêm em application/problem+json com a lista erros[campo, mensagem].
+- O que cada código quer dizer está na tabela de erros do contrato.
 
-**Entra:** carregando; lista vazia; 401, 403, 409 e erros de validação; falha de rede. **Fica de fora:** modo offline completo.
+**Entra:** carregando; lista vazia; sessão vencida, sem permissão, horário ocupado e erros de validação; falha de rede. **Fica de fora:** modo offline completo.
 
 **Passos**
 
 - [ ] Indicador de carregamento e botões desabilitados durante o envio
 - [ ] Mensagem de lista vazia
-- [ ] 401 leva ao login
-- [ ] 403 informa falta de permissão
-- [ ] 409 atualiza a disponibilidade e avisa o conflito
+- [ ] Sessão vencida leva ao login
+- [ ] Sem permissão mostra um aviso
+- [ ] Horário ocupado atualiza a disponibilidade e avisa
 - [ ] Erros de validação aparecem ao lado do campo (erros[campo])
 - [ ] Falha de rede permite tentar de novo
 
@@ -818,7 +779,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 - **RNF-013** — O sistema deve possuir mecanismos de tratamento de falhas de comunicação com o backend.
 
-**Links:** [api/openapi.yaml](../api/openapi.yaml)
+**Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml)
 
 <a id="fe-06"></a>
 
@@ -889,7 +850,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RF-029** — O sistema deve permitir que médicos consultem a própria agenda e as consultas marcadas com eles.
 - **RF-030** — O sistema deve permitir que médicos cancelem consultas da própria agenda, informando o motivo.
 
-**Links:** [api/openapi.yaml](../api/openapi.yaml) · [requisitos/REQUISITOS.md](../requisitos/REQUISITOS.md)
+**Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml) · [requisitos/REQUISITOS.md](../requisitos/REQUISITOS.md)
 
 <a id="qa-01"></a>
 
@@ -1007,44 +968,6 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 ### Em andamento
 
-<a id="doc-02"></a>
-
-#### DOC-02 — Migrar a documentação do Drive para o repositório agendamentos-sa-docs
-
-**Lista:** Em andamento · **Responsável:** Luís · **Prazo (proposta):** 16/11 · **Depende de:** — · **Etiquetas:** Documentação
-
-**Pra quê.** Ter um lugar só, versionado, para requisitos, arquitetura, banco, contrato e backlog.
-
-**O que já se sabe**
-
-- No Drive havia o documento de requisitos (Word) e quatro arquivos de arquitetura em texto; modelagem e contrato estavam em arquivos soltos.
-- Como no FileMind (backend, frontend e documentação), o projeto passa a ter backend, frontend e agendamentos-sa-docs.
-
-**Entra:** requisitos; arquitetura (backend v1 e v2, painel, app); modelagem e validação do banco; ambientes (local e produção); contrato OpenAPI; backlog. **Fica de fora:** código, que fica nos repositórios de implementação; conversas do grupo.
-
-**Passos**
-
-- [x] Criar o repositório agendamentos-sa-docs (hoje na organização faculdade-ads-senai)
-- [x] Converter “Trabalho SA - Desenvolvimento WEB” para requisitos/REQUISITOS.md
-- [x] Juntar os quatro arquivos de arquitetura em arquitetura/ARQUITETURA.md
-- [x] Copiar modelagem, script de validação, contrato e backlog
-- [x] Escrever o README com índice e links dos repositórios
-- [ ] Dar acesso de escrita a Yuri, Pierre e Victor
-- [ ] Avisar no grupo que o Drive deixa de ser atualizado e deixar lá o link do repositório
-- [x] Renomear o quadro do Trello para “Agendamentos SA” (era “Agenda SA — Web Responsivo”)
-
-**Pronto quando**
-
-- [ ] Tudo o que estava no Drive tem equivalente no repositório
-- [ ] Os quatro integrantes abrem e editam o repositório
-- [ ] Cartões do Trello apontam para o repositório, não para o Drive
-
-**Requisitos deste cartão**
-
-- **RNF-014** — O código-fonte deve seguir uma organização modular e padrões de desenvolvimento definidos pela equipe.
-
-**Links:** [README.md](../README.md) · [frontend-agendamento](https://github.com/VictorKLing/frontend-agendamento) · [agendamentos-sa (backend)](https://github.com/faculdade-ads-senai/agendamentos-sa-backend)
-
 <a id="db-02"></a>
 
 #### DB-02 — Validar as migrações no PostgreSQL
@@ -1094,7 +1017,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 #### DB-04 — Criar o banco de produção na nuvem
 
-**Lista:** Em andamento · **Responsável:** Luís · **Prazo (proposta):** 19/11 · **Depende de:** DB-02 · **Etiquetas:** Banco de dados, Prioridade alta
+**Lista:** Em andamento · **Responsável:** Luís · **Prazo (proposta):** 28/11 · **Depende de:** DB-02 · **Etiquetas:** Banco de dados, Prioridade alta
 
 **Pra quê.** Ter um PostgreSQL gerenciado que será o banco oficial do sistema publicado e da apresentação.
 
@@ -1143,7 +1066,9 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 **O que já se sabe**
 
-- openapi.yaml 1.3.0 (18/11), com as decisões do DEC-02 e do DEC-03: novo POST /auth/google; POST /auth/login só no perfil dev; saem /auth/cadastro e /auth/recuperacao-senha; perfil RECEPCIONISTA fora; médico com e-mail; janelas de 30 a 60 minutos; regras de cancelamento e reagendamento escritas nas rotas.
+- openapi.yaml 1.4.0 (18 e 21/11): fica o GET /auth/me para o próprio cadastro (sai o GET /usuarios/me) e o PATCH /usuarios/me muda só o nome; a lista de pacientes é GET /usuarios?perfil=PACIENTE; a hora volta sempre como HH:mm:ss; e no topo entrou a tabela única de códigos de erro, depois que o Pierre achou o Trello diferente do contrato (21/11).
+- Validada com Redocly sem erros.
+- A 1.3.0 (18/11) trouxe as decisões do DEC-02 e do DEC-03: novo POST /auth/google; POST /auth/login só no perfil dev; saem /auth/cadastro e /auth/recuperacao-senha; perfil RECEPCIONISTA fora; médico com e-mail; janelas de 30 a 60 minutos; regras de cancelamento e reagendamento escritas nas rotas.
 - A 1.2.0 (16/11) acompanhou o master com JWT.
 - Paginação e erros seguem o que o código devolve hoje (ProblemDetail com a lista erros[campo, mensagem]).
 - A 1.3.0 foi validada com Redocly sem erros.
@@ -1152,24 +1077,24 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 
 **Passos**
 
-- [x] Alinhar /usuarios e a agenda ao código (master e PR #2)
-- [x] Validar o arquivo com Redocly (1.1.0)
+- [x] Alinhar /usuarios e a agenda ao código (master e PR #2) e validar com Redocly (1.1.0)
 - [x] Alinhar ao login JWT e à V3 do master (1.2.0, 16/11)
 - [x] Aplicar as decisões do DEC-02 e do DEC-03 e validar com Redocly (1.3.0, 18/11)
 - [ ] Yuri confere autenticação, usuários e médicos
 - [ ] Pierre confere agenda, agendamentos e notificações
 - [ ] Victor confere se as telas têm todos os campos de que precisam
 - [x] POST /usuarios passa a exigir ADMIN (decidido no código do JWT, 15/11)
-- [ ] Decidir entre GET /auth/me (código) e GET /usuarios/me (contrato) para o próprio cadastro
-- [ ] Decidir se GET /usuarios ganha filtro por perfil (RF-008 lista pacientes)
-- [ ] Decidir o formato de hora: HH:mm ou HH:mm:ss
+- [x] Próprio cadastro: lê no GET /auth/me (sai o GET /usuarios/me) e o PATCH /usuarios/me muda só o nome (Luís, 18 e 21/11; 1.4.0)
+- [x] Lista de pacientes do administrador: GET /usuarios?perfil=PACIENTE (Luís, 18/11; 1.4.0)
+- [x] Hora: a API aceita HH:mm e HH:mm:ss e responde HH:mm:ss (Luís, 18/11; 1.4.0)
+- [x] Tabela única de códigos de erro no topo do contrato; médico inativo é 409 em todo lugar; rotas planejadas com 400, 401 e 403 (Luís, 21/11; 1.4.0)
 - [ ] Congelar a versão e registrar a data no arquivo
 
 **Pronto quando**
 
 - [ ] Cada rota planejada tem um cartão de backend que a implementa
 - [ ] Depois de congelado, mudança só por PR no repositório de docs, com aviso no grupo
-- [ ] Erros em application/problem+json
+- [ ] Erros em application/problem+json, com o código da tabela de erros do contrato
 
 **Requisitos deste cartão**
 
@@ -1177,7 +1102,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RNF-010** — O backend deve permitir a separação das responsabilidades de autenticação, cadastro, agenda e agendamento.
 - **RNF-017** — As APIs devem utilizar JSON como formato padrão para troca de dados.
 
-**Links:** [api/openapi.yaml](../api/openapi.yaml)
+**Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml)
 
 <a id="be-01"></a>
 
@@ -1238,7 +1163,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - Como achar o usuário: primeiro pelo google_id; depois pelo e-mail (administradores e médicos são cadastrados antes) e grava o google_id; se não achar, cria um PACIENTE. A V4 (DB-01) traz google_id, senha opcional e o perfil RECEPCIONISTA fora.
 - Sem cadastro com senha (/auth/cadastro saiu) e sem recuperação de senha (RF-004 fora da v1). Os IDs de cliente do Google saem do INF-01 (Luís).
 
-**Entra:** POST /auth/google; JWT do sistema; login de teste só no perfil dev; GET e PATCH /usuarios/me; autorização por perfil (ADMIN, PACIENTE e MEDICO); medicoId no /auth/me para o médico. **Fica de fora:** senha no ambiente publicado; recuperação de senha (RF-004 fora da v1); cadastro de médico (BE-03).
+**Entra:** POST /auth/google; JWT do sistema; login de teste só no perfil dev; GET /auth/me e PATCH /usuarios/me; filtro ?perfil= no GET /usuarios; autorização por perfil (ADMIN, PACIENTE e MEDICO); medicoId no /auth/me para o médico. **Fica de fora:** senha no ambiente publicado; recuperação de senha (RF-004 fora da v1); cadastro de médico (BE-03).
 
 **Passos**
 
@@ -1250,14 +1175,15 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - [ ] Deixar POST /auth/login só no perfil dev (login de teste)
 - [ ] Tirar RECEPCIONISTA do enum Perfil e tratar MEDICO nas regras de acesso (V4)
 - [ ] Incluir medicoId na resposta do /auth/me para o perfil MEDICO
-- [ ] PATCH do próprio cadastro (/usuarios/me no contrato; ver API-01)
+- [ ] PATCH /usuarios/me para o próprio cadastro (a leitura é o GET /auth/me; API-01, 18/11)
+- [ ] Filtro ?perfil= no GET /usuarios: a lista de pacientes do administrador é ?perfil=PACIENTE (RF-008)
 - [ ] Testes: token do Google inválido ou de outro projeto, sem token, perfil sem permissão
 - [ ] Atualizar x-status no openapi.yaml
 
 **Pronto quando**
 
-- [ ] Sem token: 401; token de paciente em rota de administrador: 403
-- [ ] Token do Google vencido ou de outro projeto: 401
+- [ ] Sem token, ou paciente em rota de administrador: recusado com o código da tabela de erros do contrato
+- [ ] Token do Google vencido ou de outro projeto é recusado
 - [ ] No perfil publicado, POST /auth/login não existe
 - [ ] Usuário desativado não consegue entrar
 - [ ] Paciente só lê e altera os próprios dados
@@ -1278,7 +1204,53 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RNF-004** — O sistema deve implementar controle de acesso baseado nos perfis de paciente, médico e administrador.
 - **RNF-018** — As funcionalidades críticas de autenticação e agendamento devem possuir testes automatizados.
 
-**Links:** [api/openapi.yaml](../api/openapi.yaml) · [MODELO_DADOS.md (Login com Google)](../banco-de-dados/MODELO_DADOS.md) · [API-USUARIOS.md](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/blob/master/API-USUARIOS.md) · [AUTENTICACAO.md](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/blob/master/AUTENTICACAO.md)
+**Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml) · [MODELO_DADOS.md (Login com Google)](../banco-de-dados/MODELO_DADOS.md) · [API-USUARIOS.md](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/blob/master/API-USUARIOS.md) · [AUTENTICACAO.md](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/blob/master/AUTENTICACAO.md)
+
+<a id="be-03"></a>
+
+#### BE-03 — Implementar o cadastro de médicos
+
+**Lista:** Em andamento · **Responsável:** Pierre (o Yuri passou o cartão para ele no Trello em 16/11) · **Prazo (proposta):** 25/11 · **Depende de:** BE-04 (merge da branch), BE-02, V4 (DB-01) · **Etiquetas:** Backend
+
+**Módulo do enunciado:** 2 — Agenda de profissionais
+
+**Pra quê.** Administrador cadastra, edita, lista e desativa médicos; paciente lista para escolher; o médico entra com o Google.
+
+**O que já se sabe**
+
+- A entidade Medico e o MedicoRepository (com lock pessimista) estão na branch feature/api-agendas; o CRUD ainda não existe. Rotas planejadas: GET e POST /medicos, GET e PATCH /medicos/{id}.
+- Desde a V4 (decisão de 17/11) o médico entra no sistema: o cadastro recebe o e-mail Google dele, cria o usuário MEDICO e liga em medico.usuario_id, na mesma transação. No primeiro login com o Google o sistema reconhece o médico pelo e-mail.
+- 21/11: o Pierre abriu o PR #2 (feature/api-medicos, parcial) com POST, GET /medicos/{id} e PATCH. O próprio PR lista o que falta: cadastro por e-mail, validações, 409 de duplicidade, lista paginada com filtros, escrita só para ADMIN, testes e x-status.
+
+**Entra:** listagem paginada com os filtros do contrato; cadastro com e-mail Google; edição; desativação lógica. **Fica de fora:** o login em si (BE-02); a tela do médico (FE-07).
+
+**Passos**
+
+- [x] Reaproveitar Medico e MedicoRepository da branch feature/api-agendas
+- [ ] Ligar a entidade Medico ao usuário (usuario_id, V4)
+- [ ] DTOs e validações: e-mail, CRM, UF com duas letras maiúsculas, especialidade
+- [ ] GET /medicos paginado com filtros
+- [ ] POST /medicos criando o usuário MEDICO com o e-mail Google, na mesma transação; GET /medicos/{id}
+- [x] PATCH /medicos/{id}, incluindo ativar e desativar (marcado pelo Pierre, 21/11)
+- [ ] Erros pela tabela de erros do contrato: CRM/UF ou e-mail repetido é conflito (no PR #2, IllegalArgumentException ainda vira erro 500)
+- [ ] Restringir escrita a ADMIN
+- [ ] Testes de duplicidade, validação e permissão
+- [ ] Atualizar x-status no openapi.yaml
+
+**Pronto quando**
+
+- [ ] Mesmo CRM em outra UF é aceito; mesmo CRM e UF é recusado como conflito
+- [ ] Médico desativado continua no histórico e some da escolha do paciente
+- [ ] Paciente lista, mas não altera
+- [ ] O médico cadastrado entra com o Google e cai no perfil MEDICO
+
+**Requisitos deste cartão**
+
+- **RN-003** — Apenas administradores podem cadastrar, editar ou desativar médicos.
+- **RN-011** — A desativação de um médico deve impedir a criação de novos agendamentos para esse profissional.
+- **RF-007** — O sistema deve permitir que administradores cadastrem, editem, consultem e desativem médicos.
+
+**Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml) · [PR #2 (médicos, parcial)](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/pull/2) · [branch feature/api-agendas](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/tree/feature/api-agendas)
 
 <a id="be-04"></a>
 
@@ -1330,7 +1302,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RNF-005** — As consultas de disponibilidade devem apresentar respostas em até 3 segundos em condições normais de utilização.
 - **RNF-012** — O sistema deve preservar a consistência dos agendamentos em operações simultâneas.
 
-**Links:** [branch feature/api-agendas](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/tree/feature/api-agendas) · [api/openapi.yaml](../api/openapi.yaml)
+**Links:** [branch feature/api-agendas](https://github.com/faculdade-ads-senai/agendamentos-sa-backend/tree/feature/api-agendas) · [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml)
 
 <a id="fe-01w"></a>
 
@@ -1343,7 +1315,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 **O que já se sabe**
 
 - Repositório VictorKLing/frontend-agendamento: Vite 7, React 19 e Tailwind 4 em JavaScript, com tela de login (main.jsx) e cliente HTTP (api.jsx).
-- Em 15/11 o Yuri ligou o painel ao JWT: login em /auth/login, sessão no sessionStorage restaurada por /auth/me, volta ao login em 401 e CRUD de usuários para ADMIN (users/Users.jsx).
+- Em 15/11 o Yuri ligou o painel ao JWT: login em /auth/login, sessão no sessionStorage restaurada por /auth/me, volta ao login quando a sessão vence e CRUD de usuários para ADMIN (users/Users.jsx).
 - A URL da API vem de VITE_API_BASE_URL ou do proxy /api do Vite.
 
 **Entra:** rotas; layout do painel; cliente HTTP central; componentes reaproveitáveis. **Fica de fora:** telas do paciente (vão para o app).
@@ -1356,7 +1328,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - [ ] React Router com rotas públicas e de administrador
 - [ ] Layout do painel: menu lateral, cabeçalho e área de conteúdo
 - [x] Cliente HTTP central com o token JWT e a URL em VITE_API_BASE_URL ou no proxy /api (15/11)
-- [x] Guardar a sessão e voltar ao login em 401 (15/11)
+- [x] Guardar a sessão e voltar ao login quando ela vence (15/11)
 - [ ] Componentes de UI: botão, campo, tabela, modal, carregando, lista vazia
 
 **Pronto quando**
@@ -1416,7 +1388,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RF-006** — O sistema deve identificar o perfil do usuário e disponibilizar as funcionalidades correspondentes.
 - **RNF-003** — As funcionalidades protegidas devem exigir autenticação válida.
 
-**Links:** [frontend-agendamento](https://github.com/VictorKLing/frontend-agendamento) · [api/openapi.yaml](../api/openapi.yaml)
+**Links:** [frontend-agendamento](https://github.com/VictorKLing/frontend-agendamento) · [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml)
 
 <a id="int-01"></a>
 
@@ -1456,7 +1428,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RNF-009** — O sistema deve utilizar APIs REST para comunicação entre os componentes.
 - **RNF-017** — As APIs devem utilizar JSON como formato padrão para troca de dados.
 
-**Links:** [api/openapi.yaml](../api/openapi.yaml)
+**Links:** [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml)
 
 ### Em revisão (PR aberto)
 
@@ -1637,7 +1609,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - Administrador: cancela e reagenda qualquer consulta futura, sem prazo mínimo.
 - Motivo obrigatório em todo cancelamento, de qualquer um. No reagendamento é opcional e vai só no texto do aviso.
 - Toda mudança avisa o paciente e o médico da consulta, menos quem fez a mudança.
-- Erros: 404 para consulta de outra pessoa; 409 para horário ocupado; 422 para consulta passada, já cancelada ou a menos de 24 horas (paciente), com a mensagem “fale com a clínica”.
+- Erros: seguem a tabela de erros do contrato (21/11). O paciente a menos de 24 horas recebe a mensagem “fale com a clínica”.
 
 **O que já se sabe**
 
@@ -1646,7 +1618,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - Por que o médico só cancela: remarcar é escolher outro horário que sirva ao paciente. Isso fica com o próprio paciente, pelo app, ou com o administrador (a recepção), falando com ele. Também é uma permissão a menos para programar e testar.
 - O reagendamento altera o intervalo da mesma consulta; o cancelamento guarda quando, quem e por quê, e a consulta continua no histórico.
 
-**Entra:** antecedência mínima; motivo do cancelamento; permissões do paciente, do médico e do administrador; quem é avisado; códigos de erro. **Fica de fora:** multa por falta; lista de espera; remarcação automática.
+**Entra:** antecedência mínima; motivo do cancelamento; permissões do paciente, do médico e do administrador; quem é avisado; mensagem para o paciente fora do prazo. **Fica de fora:** multa por falta; lista de espera; remarcação automática.
 
 **Perguntas**
 
@@ -1662,7 +1634,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 **Pronto quando**
 
 - [x] Regras registradas no MODELO_DADOS.md e no openapi.yaml
-- [x] Códigos de erro definidos: 404, 409 e 422 (inclui fora das 24 horas)
+- [x] Erro de cada caso definido; desde 21/11 os códigos estão na tabela de erros do contrato
 
 **Requisitos deste cartão**
 
@@ -1676,7 +1648,7 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RF-018** — O sistema deve permitir que administradores cancelem ou reagendem consultas.
 - **RF-030** — O sistema deve permitir que médicos cancelem consultas da própria agenda, informando o motivo.
 
-**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [api/openapi.yaml](../api/openapi.yaml)
+**Links:** [banco-de-dados/MODELO_DADOS.md](../banco-de-dados/MODELO_DADOS.md) · [openapi.yaml (contrato; tabela de erros no topo)](../api/openapi.yaml)
 
 <a id="req-01"></a>
 
@@ -1720,6 +1692,44 @@ O texto de cada requisito está em [REQUISITOS.md](../requisitos/REQUISITOS.md) 
 - **RNF-019** — As notificações devem ser registradas na mesma transação da operação que as origina e enviadas por um processo assíncrono, sem bloquear o agendamento, com registro de tentativas e reenvio em caso de falha.
 
 **Links:** [requisitos/REQUISITOS.md](../requisitos/REQUISITOS.md) · [organizacao/BACKLOG.md](../organizacao/BACKLOG.md)
+
+<a id="doc-02"></a>
+
+#### DOC-02 — Migrar a documentação do Drive para o repositório agendamentos-sa-docs
+
+**Lista:** Concluído · **Responsável:** Luís · **Prazo (proposta):** 16/11 · **Depende de:** — · **Etiquetas:** Documentação
+
+**Pra quê.** Ter um lugar só, versionado, para requisitos, arquitetura, banco, contrato e backlog.
+
+**O que já se sabe**
+
+- No Drive havia o documento de requisitos (Word) e quatro arquivos de arquitetura em texto; modelagem e contrato estavam em arquivos soltos.
+- Como no FileMind (backend, frontend e documentação), o projeto passa a ter backend, frontend e agendamentos-sa-docs.
+
+**Entra:** requisitos; arquitetura (backend v1 e v2, painel, app); modelagem e validação do banco; ambientes (local e produção); contrato OpenAPI; backlog. **Fica de fora:** código, que fica nos repositórios de implementação; conversas do grupo.
+
+**Passos**
+
+- [x] Criar o repositório agendamentos-sa-docs (hoje na organização faculdade-ads-senai)
+- [x] Converter “Trabalho SA - Desenvolvimento WEB” para requisitos/REQUISITOS.md
+- [x] Juntar os quatro arquivos de arquitetura em arquitetura/ARQUITETURA.md
+- [x] Copiar modelagem, script de validação, contrato e backlog
+- [x] Escrever o README com índice e links dos repositórios
+- [x] Dar acesso de escrita a Yuri, Pierre e Victor (conferido em 18/11: Yuri, Victor e Luís administradores, Pierre com escrita)
+- [x] Avisar no grupo que o Drive deixa de ser atualizado e deixar lá o link do repositório
+- [x] Renomear o quadro do Trello para “Agendamentos SA” (era “Agenda SA — Web Responsivo”)
+
+**Pronto quando**
+
+- [x] Tudo o que estava no Drive tem equivalente no repositório
+- [x] Os quatro integrantes abrem e editam o repositório
+- [x] Cartões do Trello apontam para o repositório, não para o Drive
+
+**Requisitos deste cartão**
+
+- **RNF-014** — O código-fonte deve seguir uma organização modular e padrões de desenvolvimento definidos pela equipe.
+
+**Links:** [README.md](../README.md) · [frontend-agendamento](https://github.com/VictorKLing/frontend-agendamento) · [agendamentos-sa (backend)](https://github.com/faculdade-ads-senai/agendamentos-sa-backend)
 
 <a id="db-03"></a>
 

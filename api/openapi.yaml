@@ -21,6 +21,25 @@ info:
 
     Cadastro completo para ADMIN, MEDICO e PACIENTE: CPF, nascimento, nome e email obrigatorios em novos cadastros. Telefone/endereco opcionais. CPF sem pontuacao antes de AES-GCM e HMAC; nunca em texto puro no banco. Legados e Master automatico podem permanecer incompletos ate regularizacao administrativa.
 
+    ## Códigos de erro
+
+    Tabela central incorporada da revisão remota 1.4.0 e atualizada para o backend 1.6.0.
+    As respostas de cada operação detalham as exceções. Erros usam application/problem+json.
+
+    | Código | Quando |
+    |---|---|
+    | 400 | JSON, campos obrigatórios, limites ou parâmetros inválidos; inclui cancelamento sem motivo. |
+    | 401 | Sessão ausente/expirada, identidade recusada ou usuário desativado; não há JWT próprio. |
+    | 403 | Perfil sem permissão ou CSRF inválido; médico não cria nem reagenda consultas. |
+    | 404 | Recurso inexistente ou de terceiro, inclusive médico/paciente informado não encontrado. |
+    | 409 | Duplicidade, horário ocupado/bloqueado, conflito concorrente ou alteração protegida; configurar agenda/bloqueio de médico inativo também retorna 409. |
+    | 422 | Intervalo/agenda inválidos, consulta fora do prazo/estado permitido, paciente não ativado ou reserva/reagendamento com médico inativo. |
+    | 503 | Integração externa temporariamente indisponível ou ocupada. |
+
+    As decisões históricas 1.4.0 sobre JWT, exclusão de GET /usuarios/me e edição própria só
+    de nome foram substituídas pelos contratos OIDC/sessão e dados pessoais 1.5.0/1.6.0.
+    Filtros de usuários por perfil/busca permanecem planejados. O histórico Git preserva a revisão anterior.
+
 servers:
   - url: http://localhost:8080/api/v1
     description: Desenvolvimento local
@@ -156,8 +175,6 @@ paths:
           $ref: '#/components/responses/DadosInvalidos'
         '401':
           $ref: '#/components/responses/NaoAutorizado'
-        '409':
-          $ref: '#/components/responses/Conflito'
 
   /usuarios:
     post:
@@ -209,7 +226,8 @@ paths:
       description: |
         Lista paginada de todos os perfis, inclusive inativos. Restrito a `ADMIN`.
         Atende ao RF-008 (consulta de pacientes pelo
-        administrador) e substitui a rota de listagem de pacientes da versão 1.0.0.
+        administrador) e substitui a rota de listagem de pacientes da versão 1.0.0: a lista de
+        pacientes é `GET /usuarios?perfil=PACIENTE` (decisão do API-01, 18/11/2026).
         Os filtros `perfil` e `busca` ainda não existem no código.
       operationId: listarUsuarios
       x-status: implementado
@@ -227,7 +245,7 @@ paths:
             example: nome,asc
         - name: perfil
           in: query
-          description: Filtro por perfil. Planejado, ainda não implementado.
+          description: Filtro por perfil; `PACIENTE` dá a lista de pacientes (RF-008). Planejado, ainda não implementado.
           x-status: planejado
           schema:
             $ref: '#/components/schemas/Perfil'
@@ -422,6 +440,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginaMedicos'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
         '401':
           $ref: '#/components/responses/NaoAutorizado'
     post:
@@ -450,6 +470,8 @@ paths:
                 $ref: '#/components/schemas/MedicoResponse'
         '400':
           $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
         '403':
           $ref: '#/components/responses/Proibido'
         '409':
@@ -470,6 +492,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MedicoResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
         '404':
           $ref: '#/components/responses/NaoEncontrado'
     patch:
@@ -495,6 +521,8 @@ paths:
                 $ref: '#/components/schemas/MedicoResponse'
         '400':
           $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
         '403':
           $ref: '#/components/responses/Proibido'
         '404':
@@ -713,6 +741,9 @@ paths:
         - $ref: '#/components/parameters/CsrfToken'
       tags: [ Agendamentos ]
       summary: Criar agendamento
+      description: |
+        O paciente marca para si; `ADMIN` marca para um paciente (`pacienteId`). Médico não
+        marca consulta (403).
       operationId: criarAgendamento
       x-status: implementado
       requestBody:
@@ -730,14 +761,18 @@ paths:
                 $ref: '#/components/schemas/AgendamentoResponse'
         '400':
           $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
         '409':
-          description: Horário indisponível ou conflito concorrente
+          description: Horário ocupado ou bloqueado, inclusive conflito concorrente
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problema'
         '422':
-          description: Horário fora da agenda, no passado ou com médico inativo
+          description: Horário fora da agenda ou no passado; médico inativo ou paciente não ativado
           content:
             application/problem+json:
               schema:
@@ -782,6 +817,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginaAgendamentos'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
         '403':
           $ref: '#/components/responses/Proibido'
 
@@ -808,6 +847,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginaAgendamentos'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
         '401':
           $ref: '#/components/responses/NaoAutorizado'
 
@@ -829,6 +870,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AgendamentoResponse'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
         '404':
           $ref: '#/components/responses/NaoEncontrado'
 
@@ -848,11 +893,13 @@ paths:
         - só consultas futuras com status `AGENDADA`; o novo horário passa pelas mesmas
           validações da criação, na mesma transação;
         - `motivo` é opcional e vai só no texto do aviso;
-        - avisa o paciente e o médico da consulta, menos quem reagendou (caixa de entrada e
-          e-mail com o convite de agenda atualizado).
+        - avisa o paciente e o médico da consulta, menos quem reagendou, por notificação interna;
+          a sincronização Google Agenda é opcional e independente, sem envio de email/.ics.
 
-        Erros: 404 para consulta de outra pessoa ou perfil sem permissão; 409 para horário
-        ocupado; 422 para consulta passada, já cancelada ou a menos de 24 horas (paciente).
+        Erros (tabela do topo): 403 para médico, que não reagenda; 404 para consulta de outra
+        pessoa; 409 para horário novo ocupado ou bloqueado; 422 para médico inativo ou consulta
+        passada, já cancelada ou concluída, a menos de 24 horas (paciente) ou horário novo fora
+        da agenda.
       operationId: reagendarConsulta
       x-status: implementado
       requestBody:
@@ -870,6 +917,10 @@ paths:
                 $ref: '#/components/schemas/AgendamentoResponse'
         '400':
           $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/Proibido'
         '404':
           $ref: '#/components/responses/NaoEncontrado'
         '409':
@@ -894,12 +945,12 @@ paths:
         - `motivo` é obrigatório para todos (o banco recusa cancelamento sem motivo, V4);
         - grava `cancelado_em` e `cancelado_por_id`, libera o horário e mantém a consulta no
           histórico;
-        - avisa o paciente e o médico da consulta, menos quem cancelou (caixa de entrada e
-          e-mail com o convite de cancelamento).
+        - avisa o paciente e o médico da consulta, menos quem cancelou, por notificação interna;
+          a sincronização Google Agenda é opcional e independente, sem envio de email/.ics.
 
-        Erros: 400 sem motivo; 404 para consulta de outra pessoa ou perfil sem permissão; 422
-        para consulta passada, já cancelada ou a menos de 24 horas (paciente), com mensagem
-        para falar com a clínica.
+        Erros (tabela do topo): 400 sem motivo; 404 para consulta de outra pessoa (inclusive
+        médico em consulta de outra agenda); 422 para consulta passada, já cancelada ou
+        concluída, ou a menos de 24 horas (paciente), com mensagem para falar com a clínica.
       operationId: cancelarConsulta
       x-status: implementado
       requestBody:
@@ -917,6 +968,8 @@ paths:
                 $ref: '#/components/schemas/AgendamentoResponse'
         '400':
           $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
         '404':
           $ref: '#/components/responses/NaoEncontrado'
         '422':
@@ -946,6 +999,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginaNotificacoes'
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
         '401':
           $ref: '#/components/responses/NaoAutorizado'
 
@@ -967,6 +1022,10 @@ paths:
       responses:
         '204':
           description: Notificação marcada como lida
+        '400':
+          $ref: '#/components/responses/DadosInvalidos'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
         '404':
           $ref: '#/components/responses/NaoEncontrado'
   /usuarios/{usuarioId}/dados-pessoais:
@@ -1419,7 +1478,9 @@ components:
     Hora:
       type: string
       pattern: '^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$'
-      description: Hora local no formato HH:mm ou HH:mm:ss.
+      description: |
+        Hora local. Na requisição, a API aceita HH:mm ou HH:mm:ss; na resposta, devolve sempre
+        HH:mm:ss (decisão do API-01, 18/11/2026).
       example: '08:00:00'
 
     AgendaItem:

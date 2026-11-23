@@ -316,4 +316,4 @@ Fechadas pelo grupo em sala em 17/11/2026 e confirmadas pelo Luís em 18/11. A t
 | Quem cancela e reagenda | Paciente: as próprias consultas futuras, até 24 horas antes do início. Médico: só cancela, consultas futuras da própria agenda, sem prazo. `ADMIN`: qualquer consulta futura, sem prazo |
 | Motivo | Obrigatório em todo cancelamento. No reagendamento é opcional e vai só no texto da notificação |
 | Quem é avisado | Toda mudança avisa o paciente e o médico da consulta, menos quem fez a mudança |
-| Erros | 404: consulta de outro paciente; 409: horário ocupado; 422: consulta passada, já cancelada ou a menos de 24 horas (paciente) |
+| Erros | Seguem a tabela “Códigos de erro” no topo do `openapi.yaml` (21/11). O paciente a menos de 24 horas recebe a mensagem para falar com a clínica |
