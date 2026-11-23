@@ -1,3 +1,13 @@
+# Decisões vigentes — REST 1.6.0
+
+Esta atualização prevalece sobre decisões históricas incompatíveis abaixo. O backend implementa médicos, agendas, bloqueios, disponibilidade, agendamentos e notificações com as sessões OIDC/CSRF/CORS existentes. Controller valida contrato; Service aplica regras/transação; repositórios JPA cuidam das entidades; JDBC parametrizado atende projeções, filas e locks PostgreSQL.
+
+Todas as alterações de agenda/bloqueio/consulta usam o mesmo lock do médico. Agendamentos possuem também versão/lock próprio e constraints GiST de sobreposição por médico e paciente. Estado de consulta e Outbox são atômicos. HTTP Google não participa da transação principal nem mantém transação SQL aberta. Consistência externa eventual, com deduplicação e reconciliação do estado atual.
+
+Notificações somente internas nesta entrega; email/Brevo/.ics ficam fora. Google Agenda é opcional do PACIENTE, com outro cliente OAuth, state/nonce/PKCE, refresh token AES-GCM e mesma identidade sub do SSO. O login não solicita Calendar. PostgreSQL permanece a fonte oficial; nenhum compromisso pessoal é importado. [Arquitetura Outbox](OUTBOX.md), [consentimento/configuração](../api/GOOGLE-AGENDA.md).
+
+---
+
 > Atualização 1.5.0: dados pessoais dos três perfis permanecem em Usuario, protegidos por serviço central AES-256-GCM e índice HMAC do CPF. DTOs gerais não expõem os campos; consultas específicas exigem ADMIN ou proprietário. OAuth/sessões/CSRF permanecem. [Contrato](../api/DADOS-PESSOAIS.md).
 
 > Atualização 22/11/2026: contrato atual 1.4.0, perfis ADMIN/MEDICO/PACIENTE e migrações V1–V6. V6 renomeia ADMINISTRADOR para ADMIN sem excluir registros. Menções à V5 e a perfis anteriores abaixo preservam o histórico. Execução e validação: [guia OAuth](../api/INTEGRACAO-OAUTH.md).

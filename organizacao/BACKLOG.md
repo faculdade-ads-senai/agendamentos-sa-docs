@@ -1,3 +1,13 @@
+# Atualização de execução — REST 1.6.0
+
+O quadro histórico abaixo é conservado; esta seção prevalece sobre seus estados anteriores. BE-03 (médicos), BE-04 (agenda/bloqueios/disponibilidade), BE-05 (agendamentos), BE-09 (listas/histórico), BE-06 (notificações internas) e DIST-01 (Transactional Outbox) possuem implementação neste checkout. A integração Google Agenda opcional foi acrescentada por decisão posterior; email/Brevo/.ics não fazem parte desta entrega.
+
+DEC-04: conclusão manual pelo ADMIN ou médico responsável, somente depois do fim, com auditoria e repetição idempotente. Telas do médico não são alteradas neste trabalho. BE-07 é validado por testes PostgreSQL descartável, concorrência REST e gateway Google simulado; ver relatório de execução para resultados reais.
+
+Pendências externas: configuração de cliente Google Calendar, consentimento real, eventual verificação OAuth, publicação HTTPS e aceite com conta real. Nenhuma etapa de frontend/Capacitor é declarada concluída por esta implementação backend. [OpenAPI](../api/openapi.yaml), [guia de consumo](../api/GUIA-CONSUMO-1.6.md), [configuração Google](../api/GOOGLE-AGENDA.md).
+
+---
+
 # Backlog — Agendamentos SA
 
 Fonte única do quadro do Trello. Cada cartão do Trello traz a descrição e as listas de verificação deste arquivo; quando os dois divergirem, atualize os dois no mesmo dia.

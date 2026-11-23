@@ -1,3 +1,17 @@
+# Atualização vigente — migrações V8–V11
+
+Esta seção prevalece sobre descrições históricas de senha, JWT, email/.ics e conclusão indefinida abaixo. Usuário e dados pessoais V7 são preservados. Médico vinculado usa nome/email de Usuario; o nome profissional antigo fica opcional para novos vínculos e é conservado em legados sem usuário. V8 relaxa somente essa duplicação, sem apagar valores ou IDs.
+
+V9 adiciona versão otimista e autoria/data de conclusão em agendamento. Estados permanecem AGENDADA/CANCELADA/CONCLUIDA; GiST existentes impedem sobreposição por médico **e paciente**. Conclusão manual após fim, por ADMIN ou médico responsável. Cancelamentos mantêm motivo e histórico.
+
+V10 cria outbox_evento (consulta/versão/tipo/ator, motivo opcional criptografado) e outbox_entrega (consumidor/status/tentativas/próxima execução/lease/dono/erro sanitizado), com unicidade por evento/consumidor e deduplicação de notificações por evento/destinatário. Não há mensagem em memória como substituto de persistência.
+
+V11 cria google_agenda_conexao (usuário proprietário, refresh token criptografado, geração, autorização/desconexão/reconexão) e google_agenda_evento (consulta, proprietário, ID externo estável, calendário primary, estado/versão/tentativas/sincronização). Não armazena access tokens. Chaves do calendário são independentes das chaves cadastrais. Não existe importação de eventos pessoais ou fonte externa de disponibilidade.
+
+Todos os novos vínculos preservam as FKs existentes. Migrações históricas permanecem imutáveis. Dados ausentes de legados não são inventados. [Detalhes da Outbox](../arquitetura/OUTBOX.md) e [Google Agenda](../api/GOOGLE-AGENDA.md).
+
+---
+
 ## Estado atual: V7 — dados pessoais em Usuario
 
 Não foi criada entidade adicional. Usuario ganhou cpf_criptografado, cpf_indice, nascimento_criptografado, telefone_criptografado e endereco_criptografado. Os valores pessoais recuperáveis usam envelope AES-GCM versionado com nonce/tag e AAD por usuário/campo; cpf_indice é HMAC-SHA-256 com chave independente. CPF tem 11 dígitos antes da proteção, nunca texto puro no banco.

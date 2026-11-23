@@ -1,4 +1,24 @@
-## Atualização de conformidade — dados pessoais 1.5.0
+## Conformidade vigente — backend 1.6.0
+
+Esta seção substitui os estados históricos de módulos ausentes nas tabelas abaixo. Contratos foram ampliados com justificativas: cadastro médico completo atômico ou vínculo de usuário existente; usuarioId na resposta profissional; conclusão manual; Google Agenda opcional; reprocessamento operacional. Senha/JWT não são restaurados.
+
+| Módulo | Operações | Persistência/autorização | Situação |
+|---|---|---|---|
+| Médicos | GET/POST coleção; GET/PATCH ID | Usuario central, CRM/UF únicos; escrita ADMIN | Implementado |
+| Agenda | GET/PUT por médico | Janelas 30–60 min; PUT ADMIN; preserva consultas | Implementado |
+| Bloqueios | GET/POST/DELETE | ADMIN; motivo obrigatório; exclusão lógica; conflito 409 | Implementado |
+| Disponibilidade | GET por médico/data | Sessão; agenda, bloqueios, consultas, estado/fuso | Implementado |
+| Agendamentos | POST/GET coleção, GET me/ID, PATCH reagendamento/cancelamento | Propriedade, prazo, ativação Google, locks e GiST | Implementado |
+| Conclusão | PATCH agendamentos/{id}/conclusao | ADMIN/médico responsável após fim; auditada/idempotente | Implementado |
+| Notificações | GET me; PATCH leitura | Proprietário; deduplicação e lembretes internos | Implementado |
+| Google Agenda | GET status/conectar/callback; DELETE conexão; POST reprocessamento | PACIENTE; OAuth separado, criptografia, Outbox | Implementado; validação real Google externa |
+| Outbox | POST admin/outbox/{entregaId}/reprocessamento | ADMIN; somente falha terminal; CSRF | Implementado |
+
+São 18 operações de negócio originais + conclusão + cinco operações Google + reprocessamento administrativo = 25 novas operações. Escritas exigem CSRF; paginação segue o formato já existente. Google não fornece disponibilidade. Convites e login existentes são preservados. O frontend não foi modificado nesta entrega.
+
+Divergências anteriores: MedicoRequest não incluía os dados pessoais agora obrigatórios (contrato incompleto); nome profissional duplicava Usuario e alteração de email ignorava vínculo Google (backend incompatível, corrigido); regras antigas de email/.ics foram substituídas pela decisão de notificações somente internas e integração Calendar opcional. O histórico abaixo permanece para rastreabilidade, não descreve o estado 1.6.0. [Guia atual](GUIA-CONSUMO-1.6.md).
+
+## Histórico — dados pessoais 1.5.0
 
 | Operação | Contrato atual | Backend/frontend |
 |---|---|---|

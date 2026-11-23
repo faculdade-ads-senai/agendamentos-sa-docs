@@ -1,3 +1,13 @@
+# Atualização vigente — backend REST 1.6.0
+
+As decisões desta seção prevalecem sobre referências históricas incompatíveis abaixo: notificações somente internas, com lembrete nas próximas 24h; Google Agenda opcional do paciente, consentimento independente do SSO, sem importação de compromissos. PostgreSQL continua fonte oficial. Processamento persistente por Transactional Outbox, sem RabbitMQ/Kafka. [Contratos](../api/openapi.yaml) e [Outbox](../arquitetura/OUTBOX.md).
+
+Cadastro profissional completo cria Usuario MEDICO e ficha em uma transação; admite vínculo a MEDICO ativo preexistente, sem duplicar dados pessoais. Somente ADMIN cadastra/altera/desativa médicos e configura agendas/bloqueios. Paciente precisa estar ativo e ativado pelo Google para agendar, inclusive via ADMIN.
+
+RN-015 permanece: paciente modifica próprias consultas até 24h antes; médico somente cancela própria agenda antes do atendimento; ADMIN cancela/reagenda antes do atendimento. RN-016 mantém motivo obrigatório em cancelamento. Conclusão é manual pelo ADMIN ou médico responsável **após o fim**, auditada e idempotente; não automática. Perfis exclusivos ADMIN/MEDICO/PACIENTE. Novos cadastros de todos exigem os dados definidos em [DADOS-PESSOAIS](../api/DADOS-PESSOAIS.md).
+
+---
+
 ## Atualização de cadastro — contrato 1.5.0
 
 ADMIN, MEDICO e PACIENTE têm nome, CPF, nascimento e e-mail obrigatórios em novos cadastros; telefone e endereço são opcionais. ADMIN gerencia os dados pessoais de qualquer usuário, inclusive os próprios. MEDICO/PACIENTE alteram somente nome e contatos próprios, nunca CPF/nascimento. Mantêm-se as proteções de Master, perfil e e-mail vinculado ao Google. Legados e Master automático podem iniciar incompletos e continuam com acesso, sem dados fictícios.

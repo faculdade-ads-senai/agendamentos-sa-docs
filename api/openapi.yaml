@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Agenda SA API
-  version: 1.5.0
+  version: 1.6.0
   description: |
     Contrato atual de autenticação Google OIDC com sessão HTTP, sem senha ou JWT próprio.
     Perfis exclusivos ADMIN, MEDICO e PACIENTE. Migração V6 preserva dados da V5.
@@ -14,8 +14,8 @@ info:
     Falhas de navegação OAuth retornam a FRONTEND_URL com auth_error=login_failed;
     convite inválido/expirado retorna auth_error=invite_invalid. Sem detalhes de identidade.
     x-status implementado significa código neste checkout, não validação com Google real.
-    Rotas dos módulos médicos, agendas, agendamentos e notificações permanecem planejadas
-    neste checkout; referências ao PR #2 não significam que houve merge.
+    Medicos, agendas, bloqueios, agendamentos e notificacoes implementados neste checkout.
+    Google Agenda opcional e independente do login; PostgreSQL e a fonte oficial.
     Datas ISO-8601 com fuso; exibição America/Sao_Paulo. Clínica única.
     Histórico JWT substituído em historico/openapi-1.3.0.yaml. Matriz em CONFORMIDADE.md.
 
@@ -86,6 +86,8 @@ paths:
                   token: { type: string }
   /auth/logout:
     post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Autenticação ]
       summary: Invalidar sessão local e remover cookie
       x-status: implementado
@@ -129,6 +131,8 @@ paths:
         '401':
           $ref: '#/components/responses/NaoAutorizado'
     patch:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Usuários ]
       summary: Atualizar o próprio cadastro
       description: Atualiza somente nome e contato proprio. CPF/nascimento/email/perfil/estado nao sao aceitos,
@@ -157,6 +161,8 @@ paths:
 
   /usuarios:
     post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Usuários ]
       summary: Criar usuário
       description: |
@@ -271,6 +277,8 @@ paths:
         '404':
           $ref: '#/components/responses/NaoEncontrado'
     put:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Usuários ]
       summary: Atualizar usuário
       description: |
@@ -305,6 +313,8 @@ paths:
         '409':
           $ref: '#/components/responses/Conflito'
     delete:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Usuários ]
       summary: Desativar usuário
       description: |
@@ -329,6 +339,8 @@ paths:
     parameters:
       - $ref: '#/components/parameters/UsuarioId'
     post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Usuários ]
       summary: Emitir convite para usuário pendente
       description: ADMIN + CSRF; sem corpo. Revoga anteriores; bloqueado/Master/vinculado retorna 409.
@@ -362,6 +374,8 @@ paths:
         required: true
         schema: { type: integer, format: int64 }
     delete:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Usuários ]
       summary: Revogar convite
       description: ADMIN + CSRF; vínculo inválido ou convite usado retorna 409.
@@ -389,7 +403,7 @@ paths:
       tags: [ Médicos ]
       summary: Listar médicos
       operationId: listarMedicos
-      x-status: planejado
+      x-status: implementado
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
@@ -411,14 +425,16 @@ paths:
         '401':
           $ref: '#/components/responses/NaoAutorizado'
     post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Médicos ]
       summary: Cadastrar médico
       description: |
-        Requer perfil `ADMIN`. CRM e UF juntos são únicos. O `email` é a conta Google com que o
-        médico vai entrar: a operação cria o usuário `MEDICO` com esse e-mail e liga ao cadastro
-        do médico (`medico.usuario_id`, V4). E-mail já usado devolve 409.
+        ADMIN + CSRF. Cria Usuario MEDICO com cadastro completo e ficha profissional atomicamente,
+        ou vincula usuarioId MEDICO ativo ainda sem ficha. Modos exclusivos; CRM/UF unicos.
+        Retorna usuarioId para emissao separada de convite. Nao exige Google vinculado no cadastro.
       operationId: cadastrarMedico
-      x-status: planejado
+      x-status: implementado
       requestBody:
         required: true
         content:
@@ -446,7 +462,7 @@ paths:
       tags: [ Médicos ]
       summary: Consultar médico
       operationId: consultarMedico
-      x-status: planejado
+      x-status: implementado
       responses:
         '200':
           description: Médico encontrado
@@ -457,11 +473,13 @@ paths:
         '404':
           $ref: '#/components/responses/NaoEncontrado'
     patch:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Médicos ]
       summary: Atualizar ou desativar médico
       description: Requer perfil `ADMIN`. A propriedade `ativo` faz a desativação lógica.
       operationId: atualizarMedico
-      x-status: planejado
+      x-status: implementado
       requestBody:
         required: true
         content:
@@ -492,8 +510,8 @@ paths:
       summary: Consultar agenda semanal do médico
       description: Requer usuário autenticado. Retorna só as janelas ativas, por dia e hora de início.
       operationId: consultarAgendaMedico
-      x-status: planejado
-      x-origem: PR #2 (fora deste checkout)
+      x-status: implementado
+      x-origem: adaptado ao SSO e cadastro completo
       responses:
         '200':
           description: Agenda semanal
@@ -508,6 +526,8 @@ paths:
         '404':
           $ref: '#/components/responses/NaoEncontrado'
     put:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Agendas ]
       summary: Substituir agenda semanal do médico
       description: |
@@ -516,8 +536,8 @@ paths:
         (adjacentes são aceitas) e cada janela precisa comportar ao menos uma consulta.
         Consultas já marcadas são mantidas.
       operationId: substituirAgendaMedico
-      x-status: planejado
-      x-origem: PR #2 (fora deste checkout)
+      x-status: implementado
+      x-origem: adaptado ao SSO e cadastro completo
       requestBody:
         required: true
         content:
@@ -556,8 +576,8 @@ paths:
       summary: Listar bloqueios ativos do médico
       description: Requer perfil `ADMIN`. Ordenados pelo início.
       operationId: listarBloqueiosAgenda
-      x-status: planejado
-      x-origem: PR #2 (fora deste checkout)
+      x-status: implementado
+      x-origem: adaptado ao SSO e cadastro completo
       responses:
         '200':
           description: Bloqueios ativos
@@ -576,14 +596,16 @@ paths:
         '404':
           $ref: '#/components/responses/NaoEncontrado'
     post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Agendas ]
       summary: Criar bloqueio de agenda
       description: |
         Requer perfil `ADMIN`. Não cancela consultas: se houver consulta `AGENDADA`
         no período, o bloqueio é recusado com 409.
       operationId: criarBloqueioAgenda
-      x-status: planejado
-      x-origem: PR #2 (fora deste checkout)
+      x-status: implementado
+      x-origem: adaptado ao SSO e cadastro completo
       requestBody:
         required: true
         content:
@@ -625,14 +647,16 @@ paths:
           format: int64
           minimum: 1
     delete:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Agendas ]
       summary: Desativar bloqueio de agenda
       description: |
         Requer perfil `ADMIN`. Exclusão lógica, para manter rastreabilidade;
         repetir a chamada num bloqueio existente também retorna 204.
       operationId: desativarBloqueioAgenda
-      x-status: planejado
-      x-origem: PR #2 (fora deste checkout)
+      x-status: implementado
+      x-origem: adaptado ao SSO e cadastro completo
       responses:
         '204':
           description: Bloqueio desativado
@@ -665,8 +689,8 @@ paths:
         Médico inativo ou data passada retornam lista vazia. O resultado é uma fotografia: a
         confirmação do agendamento revalida o horário.
       operationId: consultarHorariosDisponiveis
-      x-status: planejado
-      x-origem: PR #2 (fora deste checkout)
+      x-status: implementado
+      x-origem: adaptado ao SSO e cadastro completo
       responses:
         '200':
           description: Horários livres
@@ -685,10 +709,12 @@ paths:
 
   /agendamentos:
     post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Agendamentos ]
       summary: Criar agendamento
       operationId: criarAgendamento
-      x-status: planejado
+      x-status: implementado
       requestBody:
         required: true
         content:
@@ -721,7 +747,7 @@ paths:
       summary: Listar agendamentos para administração
       description: Requer perfil `ADMIN`.
       operationId: listarAgendamentos
-      x-status: planejado
+      x-status: implementado
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
@@ -767,7 +793,7 @@ paths:
         Paciente: as próprias consultas. Médico: as consultas da própria agenda (do médico ligado
         ao usuário). Próximas e histórico saem do mesmo resultado, filtrando por status e data.
       operationId: listarMeusAgendamentos
-      x-status: planejado
+      x-status: implementado
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
@@ -795,7 +821,7 @@ paths:
         Paciente acessa apenas o próprio registro; médico, as consultas da própria agenda;
         `ADMIN`, qualquer registro. Consulta de outra pessoa devolve 404.
       operationId: consultarAgendamento
-      x-status: planejado
+      x-status: implementado
       responses:
         '200':
           description: Agendamento encontrado
@@ -810,6 +836,8 @@ paths:
     parameters:
       - $ref: '#/components/parameters/AgendamentoId'
     patch:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Agendamentos ]
       summary: Reagendar consulta
       description: |
@@ -826,7 +854,7 @@ paths:
         Erros: 404 para consulta de outra pessoa ou perfil sem permissão; 409 para horário
         ocupado; 422 para consulta passada, já cancelada ou a menos de 24 horas (paciente).
       operationId: reagendarConsulta
-      x-status: planejado
+      x-status: implementado
       requestBody:
         required: true
         content:
@@ -853,6 +881,8 @@ paths:
     parameters:
       - $ref: '#/components/parameters/AgendamentoId'
     patch:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Agendamentos ]
       summary: Cancelar consulta
       description: |
@@ -871,7 +901,7 @@ paths:
         para consulta passada, já cancelada ou a menos de 24 horas (paciente), com mensagem
         para falar com a clínica.
       operationId: cancelarConsulta
-      x-status: planejado
+      x-status: implementado
       requestBody:
         required: true
         content:
@@ -900,7 +930,7 @@ paths:
         Caixa de entrada do app e do painel: as notificações do canal `SISTEMA` do usuário
         autenticado. As do canal `EMAIL` são enviadas em segundo plano e não aparecem aqui.
       operationId: listarMinhasNotificacoes
-      x-status: planejado
+      x-status: implementado
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
@@ -928,10 +958,12 @@ paths:
           type: integer
           format: int64
     patch:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
       tags: [ Notificações ]
       summary: Marcar notificação como lida
       operationId: marcarNotificacaoComoLida
-      x-status: planejado
+      x-status: implementado
       responses:
         '204':
           description: Notificação marcada como lida
@@ -976,6 +1008,114 @@ paths:
         "401":
           $ref: "#/components/responses/NaoAutorizado"
 
+  /agendamentos/{agendamentoId}/conclusao:
+    parameters:
+      - $ref: '#/components/parameters/AgendamentoId'
+    patch:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      tags: [ Agendamentos ]
+      summary: Concluir consulta manualmente
+      operationId: concluirAgendamento
+      x-status: implementado
+      description: ADMIN ou medico responsavel, somente depois do fim. Repeticao idempotente; cancelada retorna 409; antes do fim 422. Paciente nao autorizado.
+      responses:
+        '200':
+          description: Consulta concluida
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgendamentoResponse' }
+        '403': { $ref: '#/components/responses/Proibido' }
+        '404': { $ref: '#/components/responses/NaoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflito' }
+        '422': { $ref: '#/components/responses/RegraViolada' }
+  /integracoes/google-agenda/status:
+    get:
+      tags: [ Google Agenda ]
+      summary: Consultar conexao propria
+      operationId: statusGoogleAgenda
+      x-status: implementado
+      description: PACIENTE. Nao retorna tokens nem identidade Google. disponivel=false quando integracao desabilitada.
+      responses:
+        '200':
+          description: Estado sem cache
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GoogleAgendaStatus' }
+        '401': { $ref: '#/components/responses/NaoAutorizado' }
+        '403': { $ref: '#/components/responses/Proibido' }
+  /integracoes/google-agenda/conectar:
+    get:
+      tags: [ Google Agenda ]
+      summary: Iniciar consentimento separado por navegacao completa
+      operationId: conectarGoogleAgenda
+      x-status: implementado
+      description: PACIENTE com sessao. OAuth dedicado, state de uso unico valido 10 minutos, nonce e PKCE. Escopos openid e calendar.events.owned, offline e consent. Nao substitui login.
+      responses:
+        '302': { description: Navegacao para Google }
+        '401': { $ref: '#/components/responses/NaoAutorizado' }
+        '403': { $ref: '#/components/responses/Proibido' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /integracoes/google-agenda/callback:
+    get:
+      tags: [ Google Agenda ]
+      summary: Receber consentimento do Google
+      operationId: callbackGoogleAgenda
+      x-status: implementado
+      description: Exige sessao original de PACIENTE. Valida assinatura, emissor, audiencia, expiracao, nonce e sub igual ao SSO. Retorna GOOGLE_AGENDA_RETURN_URI com google_agenda=conectado ou codigo seguro de falha. Nao envia tokens ao navegador.
+      parameters:
+        - { name: state, in: query, schema: { type: string } }
+        - { name: code, in: query, schema: { type: string } }
+        - { name: error, in: query, schema: { type: string } }
+      responses:
+        '302': { description: Retorno fixo ao cliente, sem cache e no-referrer }
+        '401': { $ref: '#/components/responses/NaoAutorizado' }
+        '403': { $ref: '#/components/responses/Proibido' }
+  /integracoes/google-agenda:
+    delete:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      tags: [ Google Agenda ]
+      summary: Desconectar calendario proprio
+      operationId: desconectarGoogleAgenda
+      x-status: implementado
+      description: PACIENTE + CSRF. Inutiliza credenciais e trabalhos pendentes; revoga acesso remoto quando possivel. Preserva consultas, sessao SSO e eventos ja criados. Revogacao pode exigir novo consentimento em futuro login no mesmo projeto Google.
+      responses:
+        '204': { description: Conexao local desativada }
+        '401': { $ref: '#/components/responses/NaoAutorizado' }
+        '403': { $ref: '#/components/responses/Proibido' }
+        '409': { $ref: '#/components/responses/Conflito' }
+        '503': { description: Integracao ocupada; repetir com backoff }
+  /integracoes/google-agenda/reprocessamento:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      tags: [ Google Agenda ]
+      summary: Reprocessar falhas terminais do proprio calendario
+      operationId: reprocessarGoogleAgenda
+      x-status: implementado
+      description: PACIENTE conectado + CSRF. Sem corpo e sem IDs externos. Reprocessa somente entregas em FALHA do proprietario, mantendo idempotencia e politica sem backfill.
+      responses:
+        '204': { description: Falhas proprias recolocadas na fila }
+        '401': { $ref: '#/components/responses/NaoAutorizado' }
+        '403': { $ref: '#/components/responses/Proibido' }
+        '409': { $ref: '#/components/responses/Conflito' }
+  /admin/outbox/{entregaId}/reprocessamento:
+    parameters:
+      - { name: entregaId, in: path, required: true, schema: { type: integer, format: int64, minimum: 1 } }
+    post:
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      tags: [ Operacao ]
+      summary: Reprocessar entrega em falha terminal
+      operationId: reprocessarEntregaOutbox
+      x-status: implementado
+      description: ADMIN + CSRF. Somente FALHA; sem payload arbitrario. Reinicia tentativas e disponibilidade, sem alterar consultas.
+      responses:
+        '204': { description: Entrega recolocada na fila }
+        '403': { $ref: '#/components/responses/Proibido' }
+        '409': { $ref: '#/components/responses/Conflito' }
+
 components:
   securitySchemes:
     sessionCookie:
@@ -985,6 +1125,12 @@ components:
       description: Cookie HttpOnly estabelecido pelo Spring; nunca manipulado pelo JavaScript.
 
   parameters:
+    CsrfToken:
+      name: X-CSRF-TOKEN
+      in: header
+      required: true
+      description: Token da sessao recuperado em GET /auth/csrf.
+      schema: { type: string }
     Page:
       name: page
       in: query
@@ -1222,64 +1368,53 @@ components:
     MedicoRequest:
       type: object
       additionalProperties: false
-      required: [ nome, email, crm, ufCrm, especialidade ]
+      required: [ crm, ufCrm, especialidade ]
       properties:
-        nome:
-          $ref: '#/components/schemas/Nome'
-        email:
-          $ref: '#/components/schemas/Email'
-        crm:
-          type: string
-          minLength: 1
-          maxLength: 20
-        ufCrm:
-          type: string
-          pattern: '^[A-Z]{2}$'
-        especialidade:
-          type: string
-          minLength: 1
-          maxLength: 100
+        usuarioId: { type: integer, format: int64, minimum: 1 }
+        nome: { $ref: '#/components/schemas/Nome' }
+        email: { $ref: '#/components/schemas/Email' }
+        dadosPessoais: { $ref: '#/components/schemas/DadosPessoaisRequest' }
+        crm: { type: string, minLength: 1, maxLength: 20 }
+        ufCrm: { type: string, pattern: '^[A-Z]{2}$' }
+        especialidade: { type: string, minLength: 1, maxLength: 100 }
+      oneOf:
+        - required: [ nome, email, dadosPessoais ]
+          not: { required: [ usuarioId ] }
+        - required: [ usuarioId ]
+          not:
+            anyOf:
+              - required: [ nome ]
+              - required: [ email ]
+              - required: [ dadosPessoais ]
 
     AtualizarMedicoRequest:
       type: object
       additionalProperties: false
       minProperties: 1
+      description: ADMIN; identidade passa pelas protecoes de Usuario. usuarioId apenas para primeiro vinculo de legado, nunca reatribuicao. ativo controla a ficha profissional; inativar Usuario tambem impede disponibilidade.
       properties:
-        nome:
-          $ref: '#/components/schemas/Nome'
-        email:
-          $ref: '#/components/schemas/Email'
-        crm:
-          type: string
-          minLength: 1
-          maxLength: 20
-        ufCrm:
-          type: string
-          pattern: '^[A-Z]{2}$'
-        especialidade:
-          type: string
-          minLength: 1
-          maxLength: 100
-        ativo:
-          type: boolean
+        usuarioId: { type: integer, format: int64, minimum: 1 }
+        nome: { $ref: '#/components/schemas/Nome' }
+        email: { $ref: '#/components/schemas/Email' }
+        crm: { type: string, minLength: 1, maxLength: 20 }
+        ufCrm: { type: string, pattern: '^[A-Z]{2}$' }
+        especialidade: { type: string, minLength: 1, maxLength: 100 }
+        ativo: { type: boolean }
 
     MedicoResponse:
-      allOf:
-        - $ref: '#/components/schemas/MedicoRequest'
-        - type: object
-          required: [ id, ativo, criadoEm, atualizadoEm ]
-          properties:
-            id:
-              type: integer
-              format: int64
-            ativo:
-              type: boolean
-            criadoEm:
-              type: string
-              format: date-time
-            atualizadoEm:
-              type: string
-              format: date-time
+      type: object
+      required: [ id, usuarioId, nome, email, crm, ufCrm, especialidade, ativo, criadoEm, atualizadoEm ]
+      properties:
+        id: { type: integer, format: int64 }
+        usuarioId: { type: integer, format: int64, nullable: true, description: Nulo apenas em medico legado ainda sem conta }
+        nome: { type: string }
+        email: { type: string, format: email, nullable: true }
+        crm: { type: string }
+        ufCrm: { type: string }
+        especialidade: { type: string }
+        ativo: { type: boolean }
+        criadoEm: { type: string, format: date-time }
+        atualizadoEm: { type: string, format: date-time }
 
     Hora:
       type: string
@@ -1618,6 +1753,15 @@ components:
         erros:
           - campo: email
             mensagem: deve ser um endereço de e-mail bem formado
+    GoogleAgendaStatus:
+      type: object
+      required: [ disponivel, conectado, sincronizacaoAtiva, requerReconexao, falhas ]
+      properties:
+        disponivel: { type: boolean }
+        conectado: { type: boolean }
+        sincronizacaoAtiva: { type: boolean }
+        requerReconexao: { type: boolean }
+        falhas: { type: integer, format: int64, minimum: 0 }
     DadosPessoaisRequest:
       type: object
       required:
