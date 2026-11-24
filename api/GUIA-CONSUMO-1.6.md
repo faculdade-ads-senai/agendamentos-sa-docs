@@ -1,5 +1,7 @@
 # Guia de consumo web/mobile — API 1.6.0
 
+Atualização 1.6.1: Google Agenda usa o mesmo cliente OAuth Web do login, mantendo consentimento e callback separados. Não há mudança nos contratos de consumo. Conexões antigas incompatíveis informam requerReconexao=true; solicitar novo consentimento. Revogar o calendário pode exigir novo consentimento em um login futuro, sem encerrar a sessão HTTP atual.
+
 Base local `http://localhost:8080/api/v1`. Usar HTTPS na publicação, cookies de sessão (`credentials: include`) e origens exatas autorizadas. Não usar Bearer/JWT próprio nem armazenar JSESSIONID. Rotas retornam Problem Details; 401 exige login, 403 indica permissão ou `code=csrf_invalid`. Somente nessa rejeição recuperar novo CSRF antes de uma repetição limitada.
 
 Login: navegação completa à raiz `/oauth2/authorization/google`; retorno à FRONTEND_URL; GET `/auth/me` recupera usuário. GET `/auth/csrf` retorna headerName/token; enviar esse cabeçalho em toda escrita. POST `/auth/logout` encerra a sessão (204); não confundir com desconectar calendário.

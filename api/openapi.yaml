@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Agenda SA API
-  version: 1.6.0
+  version: 1.6.1
   description: |
     Contrato atual de autenticação Google OIDC com sessão HTTP, sem senha ou JWT próprio.
     Perfis exclusivos ADMIN, MEDICO e PACIENTE. Migração V6 preserva dados da V5.
@@ -1109,7 +1109,7 @@ paths:
       summary: Iniciar consentimento separado por navegacao completa
       operationId: conectarGoogleAgenda
       x-status: implementado
-      description: PACIENTE com sessao. OAuth dedicado, state de uso unico valido 10 minutos, nonce e PKCE. Escopos openid e calendar.events.owned, offline e consent. Nao substitui login.
+      description: PACIENTE com sessao. OAuth com consentimento separado, state de uso unico valido 10 minutos, nonce e PKCE. Escopos openid e calendar.events.owned, offline e consent. Nao substitui login.
       responses:
         '302': { description: Navegacao para Google }
         '401': { $ref: '#/components/responses/NaoAutorizado' }

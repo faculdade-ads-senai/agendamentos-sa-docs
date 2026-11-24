@@ -1,4 +1,6 @@
-## Conformidade vigente — backend 1.6.0
+## Conformidade vigente — backend 1.6.1
+
+Na revisão 1.6.1, SSO e Google Agenda compartilham GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET. Login continua sem escopo Calendar; consentimento, callback e armazenamento de refresh tokens permanecem separados. Conexões do cliente anterior exigem reconexão. A desconexão mantém revogação no Google e sessão HTTP local, mas pode exigir novo consentimento em login futuro. Não há mudança de endpoints/DTOs nem migração de banco.
 
 Esta seção substitui os estados históricos de módulos ausentes nas tabelas abaixo. Contratos foram ampliados com justificativas: cadastro médico completo atômico ou vínculo de usuário existente; usuarioId na resposta profissional; conclusão manual; Google Agenda opcional; reprocessamento operacional. Senha/JWT não são restaurados.
 

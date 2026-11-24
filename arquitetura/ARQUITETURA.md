@@ -4,7 +4,7 @@ Esta atualização prevalece sobre decisões históricas incompatíveis abaixo. 
 
 Todas as alterações de agenda/bloqueio/consulta usam o mesmo lock do médico. Agendamentos possuem também versão/lock próprio e constraints GiST de sobreposição por médico e paciente. Estado de consulta e Outbox são atômicos. HTTP Google não participa da transação principal nem mantém transação SQL aberta. Consistência externa eventual, com deduplicação e reconciliação do estado atual.
 
-Notificações somente internas nesta entrega; email/Brevo/.ics ficam fora. Google Agenda é opcional do PACIENTE, com outro cliente OAuth, state/nonce/PKCE, refresh token AES-GCM e mesma identidade sub do SSO. O login não solicita Calendar. PostgreSQL permanece a fonte oficial; nenhum compromisso pessoal é importado. [Arquitetura Outbox](OUTBOX.md), [consentimento/configuração](../api/GOOGLE-AGENDA.md).
+Notificações somente internas nesta entrega; email/Brevo/.ics ficam fora. Google Agenda é opcional do PACIENTE, com mesmo cliente OAuth do SSO, state/nonce/PKCE, refresh token AES-GCM e mesma identidade sub do SSO. O login não solicita Calendar. PostgreSQL permanece a fonte oficial; nenhum compromisso pessoal é importado. [Arquitetura Outbox](OUTBOX.md), [consentimento/configuração](../api/GOOGLE-AGENDA.md).
 
 ---
 

@@ -1,5 +1,13 @@
 # Entrega do backend REST — Agenda SA 1.6.0
 
+## Atualização 1.6.1 — cliente OAuth compartilhado (23/11/2026)
+
+SSO e Google Agenda agora reutilizam GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET. Foram removidas as variáveis GOOGLE_AGENDA_CLIENT_ID/SECRET e a proibição de compartilhar o cliente. Consentimento, callback, state/nonce/PKCE e armazenamento criptografado continuam separados. O login não solicita Calendar. Conexões do cliente anterior exigem reconexão; seus tokens não são renovados com as credenciais novas. A revogação remota permanece, sem invalidar a sessão HTTP local e com possível novo consentimento em login futuro.
+
+No Google Cloud, reutilizar o cliente Web existente e autorizar ambos os callbacks. A chave AES do calendário continua independente das chaves cadastrais. Nenhuma migração ou alteração de frontend foi necessária, e o .env privado foi preservado.
+
+Validação final desta revisão: `mvn package` com BUILD SUCCESS, **152 testes encontrados, 149 passaram, zero falhas/erros e 3 opt-in ignorados**. Inclui quatro testes adicionais: credenciais compartilhadas, login sem Calendar, conexão antiga incompatível e falha de revogação preservando sessão. Evidência local: `target/sso-compartilhado-final.log`. Google real ainda depende de configuração e validação manual. Os números da seção 8 abaixo registram a entrega anterior 1.6.0.
+
 ## 1. Resumo
 
 Implementados os módulos na ordem aprovada: médicos/agendas/bloqueios; disponibilidade/agendamentos; notificações/Outbox; Google Agenda opcional; testes/documentação. O cadastro de médico novo cria Usuario e ficha profissional na mesma transação. Alternativamente vincula um MEDICO ativo existente, sem duplicar a pessoa. A resposta inclui usuarioId para emissão separada do convite.
@@ -69,15 +77,15 @@ Notificações internas avisam paciente/médico, exceto ator. Lembrete ocorre um
 
 Autorização por perfil e proprietário ocorre no backend. Médico não cria/reagenda consulta; só cancela a própria agenda antes do atendimento. Paciente só altera a própria consulta até 24h antes, inclusive o limite exato. ADMIN altera consultas antes do atendimento. Consulta de terceiro retorna 404; regras/prazo 422; conflito 409. Conclusão somente após o fim. Nenhum desses controles depende do frontend.
 
-Calendar usa outro cliente OAuth, sem mudar o principal SSO. State de uso único/10min, nonce, PKCE S256, assinatura/emissor/audiência/validade do ID token e mesmo sub do login. Refresh tokens ficam em AES-256-GCM com chave própria versionada e AAD de finalidade/usuário; access tokens somente em memória. Falhas técnicas não expõem respostas brutas ou credenciais.
+Calendar usa mesmo cliente OAuth do SSO, sem mudar o principal SSO. State de uso único/10min, nonce, PKCE S256, assinatura/emissor/audiência/validade do ID token e mesmo sub do login. Refresh tokens ficam em AES-256-GCM com chave própria versionada e AAD de finalidade/usuário; access tokens somente em memória. Falhas técnicas não expõem respostas brutas ou credenciais.
 
 Desconexão e uso das credenciais são serializados por lock PostgreSQL entre instâncias. A desconexão remove credenciais e invalida a geração antes de tentar revogação remota; mantém consultas, sessão local e eventos existentes. Não há novas chamadas após desconexão efetiva. Consistência com Google é eventual; não há promessa de atomicidade distribuída ou exclusão instantânea de uma requisição já em voo.
 
 ## 7. Configuração Google Cloud
 
-Calendar está desabilitado por padrão. Criar cliente OAuth Web dedicado no mesmo projeto Google, habilitar Calendar API, configurar consentimento/usuários de teste e registrar callback exato. Em produção usar HTTPS e avaliar verificação OAuth. A conta deve ser a mesma do SSO; não há backfill das consultas anteriores à conexão.
+Calendar está desabilitado por padrão. Reutilizar o cliente OAuth Web do SSO no projeto Google, habilitar Calendar API, configurar consentimento/usuários de teste e registrar ambos os callbacks. Em produção usar HTTPS e avaliar verificação OAuth. A conta deve ser a mesma do SSO; não há backfill das consultas anteriores à conexão.
 
-Novas variáveis: GOOGLE_AGENDA_ENABLED, GOOGLE_AGENDA_CLIENT_ID, GOOGLE_AGENDA_CLIENT_SECRET, GOOGLE_AGENDA_REDIRECT_URI, GOOGLE_AGENDA_RETURN_URI, GOOGLE_AGENDA_ENCRYPTION_KEY_BASE64, GOOGLE_AGENDA_KEY_VERSION, GOOGLE_AGENDA_PREVIOUS_KEYS_JSON e CONSULTORIO_LOCAL opcional. Credenciais/chaves já existentes permanecem necessárias. Não reutilizar AES/HMAC cadastrais no calendário.
+Novas variáveis: GOOGLE_AGENDA_ENABLED, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_AGENDA_REDIRECT_URI, GOOGLE_AGENDA_RETURN_URI, GOOGLE_AGENDA_ENCRYPTION_KEY_BASE64, GOOGLE_AGENDA_KEY_VERSION, GOOGLE_AGENDA_PREVIOUS_KEYS_JSON e CONSULTORIO_LOCAL opcional. Credenciais/chaves já existentes permanecem necessárias. Não reutilizar AES/HMAC cadastrais no calendário.
 
 Revogação entre clientes do mesmo projeto Google pode exigir novo consentimento em um login futuro. Não invalida a sessão HTTP atual. Procedimentos, escopos oficiais, backup/rotação de chaves e validação manual: [GOOGLE-AGENDA](GOOGLE-AGENDA.md).
 

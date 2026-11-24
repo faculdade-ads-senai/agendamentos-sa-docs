@@ -1,19 +1,19 @@
-# Google Agenda opcional — contrato 1.6.0
+# Google Agenda opcional — contrato 1.6.1
 
 O PostgreSQL determina consultas e disponibilidade. O calendário é uma cópia eventual das consultas do paciente, sem importação, free/busy, leitura geral de eventos ou integração com calendários de médicos. O login existente continua solicitando somente openid/email/profile.
 
 ## Configuração
 
-1. No projeto Google Cloud existente, habilitar Google Calendar API e criar **outro cliente OAuth do tipo Aplicativo da Web**. Não substituir o cliente do login.
+1. No projeto Google Cloud existente, habilitar Google Calendar API e reutilizar **o mesmo cliente OAuth Web do SSO**, com os mesmos GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET. Não criar outro cliente.
 2. Configurar a tela de consentimento e usuários de teste. Autorizar `openid` e `https://www.googleapis.com/auth/calendar.events.owned` nesse fluxo adicional. Avaliar verificação OAuth para publicação; no modo de teste o consentimento e refresh tokens podem expirar.
-3. Cadastrar exatamente o redirect URI `http://localhost:8080/api/v1/integracoes/google-agenda/callback` no cliente de calendário. Em produção usar o endereço HTTPS público do backend. O callback do login permanece `/login/oauth2/code/google`.
+3. No mesmo cliente, manter `http://localhost:8080/login/oauth2/code/google` e adicionar `http://localhost:8080/api/v1/integracoes/google-agenda/callback` aos redirect URIs autorizados. Em produção cadastrar ambos com o endereço HTTPS público do backend.
 4. Configurar as variáveis abaixo no ambiente **do backend**. Não enviar segredos ou refresh tokens para React/Capacitor. Não é necessário SDK Google no frontend.
 5. Habilitar a integração somente após configurar credenciais e chave. Com `GOOGLE_AGENDA_ENABLED=false` as demais APIs continuam funcionando e status informa `disponivel=false`.
 
 | Variável | Finalidade |
 |---|---|
 | GOOGLE_AGENDA_ENABLED | false por padrão |
-| GOOGLE_AGENDA_CLIENT_ID / GOOGLE_AGENDA_CLIENT_SECRET | Cliente exclusivo do calendário |
+| GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET | Mesmo cliente utilizado no SSO |
 | GOOGLE_AGENDA_REDIRECT_URI | Callback registrado no Google |
 | GOOGLE_AGENDA_RETURN_URI | Retorno fixo ao cliente; não aceita URL fornecida na requisição |
 | GOOGLE_AGENDA_ENCRYPTION_KEY_BASE64 | Chave AES de 32 bytes aleatórios, independente de AES/HMAC cadastrais |
@@ -26,6 +26,8 @@ Gerar cada chave separadamente com `openssl rand -base64 32` ou gerador criptogr
 Para rotacionar: adicionar a chave antiga ao mapa de versões, configurar nova chave/versão ativa, publicar e validar leitura dos envelopes antigos. Novas autorizações/renovações passam a usar a versão ativa. Manter chaves antigas até não haver credenciais e backups dependentes delas; não remover antes disso. A rotação cadastral existente continua independente.
 
 ## Consentimento
+
+As variáveis GOOGLE_AGENDA_CLIENT_ID e GOOGLE_AGENDA_CLIENT_SECRET foram removidas: somente as credenciais configuradas no SSO são utilizadas. Conexões de um cliente antigo exigem novo consentimento; seus refresh tokens não são transferidos para o cliente compartilhado nem usados para renovação. O status informa requerReconexao e o worker inutiliza as credenciais incompatíveis sob lock. As consultas e vínculos com eventos são preservados.
 
 PACIENTE autenticado navega para GET `/api/v1/integracoes/google-agenda/conectar`. O backend usa state aleatório de uso único e 10 minutos, nonce, PKCE S256 e acesso offline com consentimento explícito. O callback exige a mesma sessão local, usuário e geração da conexão; verifica assinatura RS256, emissor Google, audiência, validade, nonce e o mesmo `sub` utilizado no SSO. Outra conta Google é recusada sem substituir a sessão principal ou uma conexão anterior válida.
 
@@ -43,7 +45,7 @@ O consumidor relê o estado atual da consulta e verifica a versão depois do HTT
 
 DELETE exige sessão PACIENTE e CSRF. Um lock de sessão PostgreSQL por usuário serializa sincronização, renovação, callback e desconexão entre instâncias, sem manter transação SQL durante HTTP. Se ocupado, retornar 503 e repetir com backoff. A desconexão invalida a geração, remove as credenciais, interrompe novas chamadas e tenta revogar o grant com timeout. Mantém consultas, sessão local e eventos já criados, sem novas atualizações. Se a revogação remota falhar, remover manualmente o acesso na conta Google; a desconexão local permanece efetiva.
 
-**Limitação do provedor:** clientes no mesmo projeto Google podem compartilhar o grant. Revogar o calendário pode exigir novo consentimento no próximo login Google; não há promessa de isolamento de revogação entre clientes do mesmo projeto. A sessão HTTP atual não é invalidada.
+**Limitação do provedor:** usando o mesmo cliente OAuth, a revogação pode remover todos os escopos do grant do projeto, não apenas Calendar. Revogar o calendário pode exigir novo consentimento no próximo login Google. A sessão HTTP atual não é invalidada. A revogação remota foi mantida por decisão explícita; não há promessa de revogação exclusiva do calendário.
 
 ## Referências oficiais
 
